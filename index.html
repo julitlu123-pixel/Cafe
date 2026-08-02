@@ -37,8 +37,11 @@
     .cards-list { display: grid; gap: 15px; }
     .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 10px; position: relative; }
     
-    .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; padding-right: 75px; min-height: 38px; }
+    .card-header { border-bottom: 1px solid #eee; padding-bottom: 8px; padding-right: 75px; min-height: 38px; }
     .card-title { font-size: 18px; font-weight: bold; color: #2c3e50; }
+    .card-price { font-size: 15px; font-weight: bold; color: #27ae60; margin-top: 2px; }
+    .card-calories { font-size: 13px; color: #7f8c8d; margin-top: 1px; }
+
     .card-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
     .card-tag { background: #eef2f5; color: #666; font-size: 12px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
     
@@ -91,7 +94,17 @@
       
       <div class="form-group">
         <label for="itemName">Название:</label>
-        <input type="text" id="itemName" required placeholder="Например: Капучино 300мл">
+        <input type="text" id="itemName" required placeholder="Например: Капучино 300мл или Стаканчик средний">
+      </div>
+
+      <div class="form-group">
+        <label for="itemPrice">Цена:</label>
+        <input type="text" id="itemPrice" placeholder="Например: 190₽">
+      </div>
+
+      <div class="form-group">
+        <label for="itemCalories">Калорийность:</label>
+        <input type="text" id="itemCalories" placeholder="Например: 140 ккал">
       </div>
       
       <div class="form-group">
@@ -105,8 +118,8 @@
       </div>
 
       <div class="form-group">
-        <label for="itemRecipe">Состав / Техническая карта:</label>
-        <textarea id="itemRecipe" required placeholder="Эспрессо: 30 мл&#10;Молоко: 220 мл&#10;Пенка: 1 см"></textarea>
+        <label for="itemRecipe">Состав / Техническая карта / Остаток:</label>
+        <textarea id="itemRecipe" required placeholder="Эспрессо: 30 мл&#10;Молоко: 220 мл&#10;или Остаток: 45 шт"></textarea>
       </div>
 
       <button type="submit" class="btn-submit" id="btnSubmit">Сохранить позицию</button>
@@ -115,13 +128,14 @@
   </div>
 
   <script>
-    // ⚠️ ВСТАВЬ СЮДА СВОИ ДАННЫЕ ИЗ SUPABASE:
+    // URL исправлен (убран /rest/v1/):
     const SUPABASE_URL = 'https://pigciguqbzeiyaanougn.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZ2NpZ3VxYnplaXlhYW5vdWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NjY5NDQsImV4cCI6MjEwMTI0Mjk0NH0.iKDW6c6f286G48oCcRyCuQmqdoEmw6PZvk73uAwSf9U';
+    const SUPABASE_KEY = 'sb_secret_vFA29SCwvzwW3Wibw12mbQ_opoxCojM';
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое"];
+    // Добавлен тег "Смена":
+    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена"];
     let items = [];
     let selectedTag = null;
 
@@ -180,7 +194,9 @@
 
       const filteredItems = items.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(query) || 
-                              item.recipe.toLowerCase().includes(query);
+                              item.recipe.toLowerCase().includes(query) ||
+                              (item.price && item.price.toLowerCase().includes(query)) ||
+                              (item.calories && item.calories.toLowerCase().includes(query));
         const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
         return matchesSearch && matchesTag;
       });
@@ -201,7 +217,9 @@
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
           </div>
           <div class="card-header">
-            <span class="card-title">${escapeHtml(item.title)}</span>
+            <div class="card-title">${escapeHtml(item.title)}</div>
+            ${item.price ? `<div class="card-price">${escapeHtml(item.price)}</div>` : ''}
+            ${item.calories ? `<div class="card-calories">🔥 ${escapeHtml(item.calories)}</div>` : ''}
           </div>
           <div class="card-tags">
             <strong>Теги:</strong> 
@@ -210,7 +228,7 @@
           <div class="card-body">
             <img src="${item.img || defaultImg}" alt="${escapeHtml(item.title)}" class="card-img" onerror="this.src='${defaultImg}'">
             <div class="card-content">
-              <strong>ТК / Состав:</strong><br>${escapeHtml(item.recipe)}
+              <strong>ТК / Состав / Остаток:</strong><br>${escapeHtml(item.recipe)}
             </div>
           </div>
         `;
@@ -224,6 +242,8 @@
 
       document.getElementById('editItemId').value = item.id;
       document.getElementById('itemName').value = item.title;
+      document.getElementById('itemPrice').value = item.price || '';
+      document.getElementById('itemCalories').value = item.calories || '';
       document.getElementById('itemImg').value = item.img || '';
       document.getElementById('itemRecipe').value = item.recipe;
 
@@ -252,6 +272,8 @@
       e.preventDefault();
       const editId = document.getElementById('editItemId').value;
       const title = document.getElementById('itemName').value;
+      const price = document.getElementById('itemPrice').value;
+      const calories = document.getElementById('itemCalories').value;
       const img = document.getElementById('itemImg').value;
       const recipe = document.getElementById('itemRecipe').value;
       const checkedTags = Array.from(tagCheckboxesContainer.querySelectorAll('input:checked')).map(cb => cb.value);
@@ -259,6 +281,8 @@
       const payload = {
         id: editId ? Number(editId) : Date.now(),
         title,
+        price,
+        calories,
         tags: checkedTags,
         img,
         recipe
