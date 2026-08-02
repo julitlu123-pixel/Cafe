@@ -39,8 +39,17 @@
       --card-shadow: rgba(0,0,0,0.25);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background-color 0.25s, color 0.25s, border-color 0.25s; }
-    body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; max-width: 800px; margin: 0 auto; }
+    /* Убрали универсальную анимацию со всех элементов *, чтобы ввода не лагал */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    body { 
+      background-color: var(--bg-color); 
+      color: var(--text-color); 
+      padding: 15px; 
+      max-width: 800px; 
+      margin: 0 auto;
+      transition: background-color 0.25s, color 0.25s;
+    }
     
     h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
     
@@ -379,11 +388,13 @@
       }
     }
 
-    function addToCart(item) {
+    window.addToCartById = function(itemId) {
+      const item = items.find(i => i.id === itemId);
+      if (!item) return;
       const priceNumeric = parsePrice(item.price);
       cart.push({ ...item, numericPrice: priceNumeric });
       updateCartUI();
-    }
+    };
 
     function removeFromCart(index) {
       cart.splice(index, 1);
@@ -462,7 +473,6 @@
       }
     }
 
-    // Удаление ошибочного чека
     window.deleteReceipt = async function(id) {
       if (!confirm("Удалить этот чек из истории? Сумма с пишется с кассы.")) return;
 
@@ -470,7 +480,7 @@
       if (error) {
         alert('Ошибка при удалении чека: ' + error.message);
       } else {
-        fetchDailySales(); // Обновляем кассу и историю
+        fetchDailySales();
       }
     };
 
@@ -824,7 +834,7 @@
         const isBarista = currentUser.role === 'barista';
         const isResidualTag = item.tags.includes("Остаток");
 
-        let actionsHtml = `<button class="btn-add-cart" onclick='addToCart(${JSON.stringify(item)})'>+ В чек</button>`;
+        let actionsHtml = `<button class="btn-add-cart" onclick="addToCartById(${item.id})">+ В чек</button>`;
 
         if (!isBarista) {
           actionsHtml += `
