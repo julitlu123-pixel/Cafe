@@ -17,9 +17,14 @@
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; outline: none; transition: border 0.2s; }
     .search-input:focus { border-color: #3498db; }
     
-    .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: #eef2f5; color: #555; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
     .tag-btn.active { background: #3498db; color: white; }
+
+    /* Панель смены */
+    .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e0e0e0; }
+    .btn-shift { width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-shift.active { background: #e74c3c; }
     
     /* Контейнер для списка блюд с прокруткой */
     .cards-scroll-container {
@@ -35,8 +40,12 @@
 
     /* Список блюд */
     .cards-list { display: grid; gap: 15px; }
-    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 10px; position: relative; }
+    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; transition: border-color 0.3s; }
     
+    /* Статусы смены для тега Остаток */
+    .card.shift-uncheck { border-color: #e74c3c !important; background-color: #fff8f8; }
+    .card.shift-checked { border-color: #2ecc71 !important; background-color: #f8fff9; }
+
     .card-header { border-bottom: 1px solid #eee; padding-bottom: 8px; padding-right: 75px; min-height: 38px; }
     .card-title { font-size: 18px; font-weight: bold; color: #2c3e50; }
     .card-price { font-size: 15px; font-weight: bold; color: #27ae60; margin-top: 2px; }
@@ -52,6 +61,7 @@
     .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 65px; }
     .btn-edit { background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
     .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
+    .btn-check { background: #2ecc71; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px; text-align: center; margin-top: 2px; }
 
     /* Форма добавления/редактирования */
     .admin-section { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
@@ -79,6 +89,9 @@
   <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
     <div class="tags-filter" id="tagsFilter"></div>
+    <div class="shift-panel" id="shiftPanel">
+      <button class="btn-shift" id="btnShiftToggle">📋 Чекнуть смену</button>
+    </div>
   </div>
 
   <!-- Окно списка блюд -->
@@ -128,21 +141,24 @@
   </div>
 
   <script>
-    // URL исправлен (убран /rest/v1/):
     const SUPABASE_URL = 'https://pigciguqbzeiyaanougn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZ2NpZ3VxYnplaXlhYW5vdWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NjY5NDQsImV4cCI6MjEwMTI0Mjk0NH0.iKDW6c6f286G48oCcRyCuQmqdoEmw6PZvk73uAwSf9U';
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Добавлен тег "Смена":
-    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена"];
+    // Добавлен тег "Остаток":
+    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
     let items = [];
     let selectedTag = null;
+    let isShiftMode = false;
+    let checkedShiftIds = new Set();
 
     const cardsContainer = document.getElementById('cardsContainer');
     const searchInput = document.getElementById('searchInput');
     const tagsFilterContainer = document.getElementById('tagsFilter');
     const tagCheckboxesContainer = document.getElementById('tagCheckboxes');
+    const shiftPanel = document.getElementById('shiftPanel');
+    const btnShiftToggle = document.getElementById('btnShiftToggle');
     const addForm = document.getElementById('addForm');
 
     function initTags() {
@@ -167,15 +183,41 @@
       if (selectedTag === tag) {
         selectedTag = null;
         btnElement.classList.remove('active');
+        shiftPanel.style.display = 'none';
+        isShiftMode = false;
+        btnShiftToggle.classList.remove('active');
+        btnShiftToggle.textContent = '📋 Чекнуть смену';
       } else {
         document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
         selectedTag = tag;
         btnElement.classList.add('active');
+
+        // Показываем панель смены только для тега "Остаток"
+        if (tag === "Остаток") {
+          shiftPanel.style.display = 'block';
+        } else {
+          shiftPanel.style.display = 'none';
+          isShiftMode = false;
+          btnShiftToggle.classList.remove('active');
+          btnShiftToggle.textContent = '📋 Чекнуть смену';
+        }
       }
       renderCards();
     }
 
-    // Загрузка рецептов из облака
+    // Включение / выключение режима смены
+    btnShiftToggle.addEventListener('click', () => {
+      isShiftMode = !isShiftMode;
+      if (isShiftMode) {
+        btnShiftToggle.classList.add('active');
+        btnShiftToggle.textContent = '❌ Завершить проверку смены';
+      } else {
+        btnShiftToggle.classList.remove('active');
+        btnShiftToggle.textContent = '📋 Чекнуть смену';
+      }
+      renderCards();
+    });
+
     async function fetchItems() {
       cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Загрузка данных...</p>';
       const { data, error } = await db.from('recipes').select('*').order('id', { ascending: false });
@@ -209,12 +251,24 @@
       filteredItems.forEach(item => {
         const card = document.createElement('div');
         card.className = 'card';
+        
+        // Подсветка рамки в режиме смены для тега "Остаток"
+        if (isShiftMode && item.tags.includes("Остаток")) {
+          if (checkedShiftIds.has(item.id)) {
+            card.classList.add('shift-checked');
+          } else {
+            card.classList.add('shift-uncheck');
+          }
+        }
+
         const defaultImg = 'https://via.placeholder.com/150?text=No+Image';
 
         card.innerHTML = `
           <div class="card-actions">
             <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
+            ${isShiftMode && item.tags.includes("Остаток") ? 
+              `<button class="btn-check" onclick="toggleCheckShift(${item.id})">${checkedShiftIds.has(item.id) ? '✓ Проверено' : 'Чекнуть'}</button>` : ''}
           </div>
           <div class="card-header">
             <div class="card-title">${escapeHtml(item.title)}</div>
@@ -235,6 +289,16 @@
         cardsContainer.appendChild(card);
       });
     }
+
+    // Отметка позиции как проверенной
+    window.toggleCheckShift = function(id) {
+      if (checkedShiftIds.has(id)) {
+        checkedShiftIds.delete(id);
+      } else {
+        checkedShiftIds.add(id);
+      }
+      renderCards();
+    };
 
     window.editItem = function(id) {
       const item = items.find(i => i.id === id);
@@ -267,7 +331,6 @@
       document.getElementById('btnCancel').style.display = 'none';
     }
 
-    // Сохранение / обновление позиции в облаке
     addForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('editItemId').value;
@@ -292,18 +355,20 @@
       if (error) {
         alert('Ошибка при сохранении: ' + error.message);
       } else {
+        // Если меняем позицию во время смены, отмечаем её как проверенную
+        if (editId) checkedShiftIds.add(Number(editId));
         await fetchItems();
         resetForm();
       }
     });
 
-    // Удаление из облака
     window.deleteItem = async function(id) {
       if (confirm("Удалить эту позицию?")) {
         const { error } = await db.from('recipes').delete().eq('id', id);
         if (error) {
           alert('Ошибка при удалении: ' + error.message);
         } else {
+          checkedShiftIds.delete(id);
           await fetchItems();
         }
       }
