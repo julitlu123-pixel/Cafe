@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>База техкарт и меню</title>
+  <title>База техкарт и касса</title>
   
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
   <meta name="mobile-web-app-capable" content="yes">
@@ -61,6 +61,11 @@
       box-shadow: 0 2px 6px var(--shadow);
     }
 
+    /* ВКЛАДКИ НАВИГАЦИИ */
+    .app-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: var(--secondary-bg); color: var(--secondary-text); font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; text-align: center; }
+    .tab-btn.active { background: #3498db; color: white; }
+
     /* ЭКРАН ЛОГИНА */
     .login-container { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow); max-width: 400px; margin: 40px auto; }
     .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
@@ -91,16 +96,35 @@
     .report-preview-box { display: none; margin-top: 12px; background: var(--secondary-bg); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; }
     .report-textarea { width: 100%; height: 110px; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; resize: vertical; }
 
+    /* ВКЛАДКА ЧЕКОВ И КАССЫ */
+    .checkout-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 20px; }
+    .order-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; max-height: 200px; overflow-y: auto; }
+    .order-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--secondary-bg); border-radius: 6px; font-size: 14px; }
+    .order-total { font-size: 18px; font-weight: bold; text-align: right; margin-bottom: 15px; color: #2ecc71; }
+    
+    .payment-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-pay-card { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .btn-pay-cash { background: #2ecc71; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
+
+    .cash-summary-box { background: var(--secondary-bg); padding: 15px; border-radius: 12px; margin-top: 20px; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin-bottom: 6px; }
+
+    /* ИСТОРИЯ ЧЕКОВ */
+    .history-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-top: 20px; }
+    .history-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; margin-top: 10px; }
+    .history-item { background: var(--secondary-bg); padding: 10px; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .history-badge-card { background: #3498db; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    .history-badge-cash { background: #2ecc71; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+
     /* КАРТОЧКИ */
     .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
     .cards-list { display: grid; gap: 15px; }
     .card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px var(--card-shadow); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; }
     
-    /* Статусы смены с уклоном под тёмный режим */
     .card.shift-uncheck { border-color: #e74c3c !important; background-color: rgba(231, 76, 60, 0.12) !important; }
     .card.shift-checked { border-color: #2ecc71 !important; background-color: rgba(46, 204, 113, 0.12) !important; }
 
-    .card-header { border-bottom: 1px solid var(--border-color); padding-bottom: 8px; padding-right: 75px; min-height: 38px; }
+    .card-header { border-bottom: 1px solid var(--border-color); padding-bottom: 8px; padding-right: 85px; min-height: 38px; }
     .card-title { font-size: 18px; font-weight: bold; color: var(--heading-color); }
     .card-price { font-size: 15px; font-weight: bold; color: #2ecc71; margin-top: 2px; }
     .card-calories { font-size: 13px; color: var(--secondary-text); margin-top: 1px; }
@@ -112,7 +136,8 @@
     .card-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; background: var(--secondary-bg); flex-shrink: 0; }
     .card-content { flex-grow: 1; font-size: 14px; line-height: 1.4; white-space: pre-line; color: var(--text-color); }
     
-    .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 75px; }
+    .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 80px; }
+    .btn-add-cart { background: #e67e22; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: center; }
     .btn-edit { background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
     .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
     .btn-check-item { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 5px 6px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; margin-top: 2px; }
@@ -134,7 +159,7 @@
 </head>
 <body>
 
-  <!-- Кнопка переключения темы -->
+  <!-- Кнопка темы -->
   <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙 Тёмная</button>
 
   <!-- Окно Логина -->
@@ -159,7 +184,7 @@
     </form>
   </div>
 
-  <!-- Главный экран приложения -->
+  <!-- Главный экран -->
   <div id="mainAppBlock" style="display: none;">
     <div class="user-bar">
       <div>
@@ -169,41 +194,89 @@
       <button class="btn-logout" onclick="logout()">Выйти</button>
     </div>
 
-    <h1>Техкарты и Состав</h1>
+    <!-- Вкладки навигации -->
+    <div class="app-tabs">
+      <button class="tab-btn active" id="tabSearchBtn" onclick="switchTab('search')">🔍 Поиск и Меню</button>
+      <button class="tab-btn" id="tabReceiptsBtn" onclick="switchTab('receipts')">🧾 Чеки и Касса (<span id="cartCountBadge">0</span>)</button>
+    </div>
+
     <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
 
-    <!-- Инструменты Управления (Видимы только для Админа) -->
-    <div class="admin-tools" id="adminToolsPanel" style="display: none;">
-      <h3>⚙️ Управление системой (Администратор)</h3>
-      <div class="admin-grid">
-        <div>
-          <label style="font-size: 12px; font-weight: bold;">Добавить новую кофейню:</label>
-          <input type="text" id="newShopName" class="form-control" placeholder="Название новой кофейни">
-          <button onclick="createNewShop()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0;">Создать кофейню (скопировать меню)</button>
+    <!-- Раздел: Поиск и Меню -->
+    <div id="tabSearchSection">
+      <div class="admin-tools" id="adminToolsPanel" style="display: none;">
+        <h3>⚙️ Управление системой (Администратор)</h3>
+        <div class="admin-grid">
+          <div>
+            <label style="font-size: 12px; font-weight: bold;">Добавить новую кофейню:</label>
+            <input type="text" id="newShopName" class="form-control" placeholder="Название новой кофейни">
+            <button onclick="createNewShop()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0;">Создать кофейню</button>
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
+            <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин" style="margin-bottom: 4px;">
+            <input type="password" id="newBaristaPass" class="form-control" placeholder="Пароль" style="margin-bottom: 4px;">
+            <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: #3498db;">Зарегистрировать</button>
+          </div>
         </div>
-        <div>
-          <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
-          <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин бариста" style="margin-bottom: 4px;">
-          <input type="password" id="newBaristaPass" class="form-control" placeholder="Пароль" style="margin-bottom: 4px;">
-          <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: #3498db;">Зарегистрировать бариста</button>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
+        <div class="tags-filter" id="tagsFilter"></div>
+        
+        <div class="shift-panel" id="shiftPanel">
+          <div class="shift-actions">
+            <button class="btn-shift" id="btnShiftToggle">📋 Начать проверку смены</button>
+            <button class="btn-report" id="btnGenerateReport">📲 Скопировать отчёт в буфер</button>
+          </div>
+
+          <div class="report-preview-box" id="reportPreviewBox">
+            <h3>Готовый отчёт (скопирован):</h3>
+            <textarea id="reportTextarea" class="report-textarea" readonly></textarea>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Поиск -->
-    <div class="search-box">
-      <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
-      <div class="tags-filter" id="tagsFilter"></div>
-      
-      <div class="shift-panel" id="shiftPanel">
-        <div class="shift-actions">
-          <button class="btn-shift" id="btnShiftToggle">📋 Начать проверку смены</button>
-          <button class="btn-report" id="btnGenerateReport">📲 Скопировать отчёт в буфер</button>
+    <!-- Раздел: Чеки и Касса -->
+    <div id="tabReceiptsSection" style="display: none;">
+      <div class="checkout-box">
+        <h3>🛒 Текущий заказ</h3>
+        <div class="order-list" id="orderItemsContainer">
+          <p style="text-align: center; color: #888;">В чеке пока нет позиций</p>
         </div>
+        <div class="order-total">Итого: <span id="orderTotalSum">0</span> ₽</div>
+        
+        <div class="payment-btns">
+          <button class="btn-pay-card" onclick="processPayment('card')">💳 Оплата Картой</button>
+          <button class="btn-pay-cash" onclick="processPayment('cash')">💵 Оплата Наличными</button>
+        </div>
+      </div>
 
-        <div class="report-preview-box" id="reportPreviewBox">
-          <h3>Готовый отчёт (скопирован):</h3>
-          <textarea id="reportTextarea" class="report-textarea" readonly></textarea>
+      <div class="cash-summary-box">
+        <h3>📊 Выручка за текущую смену (с 06:00)</h3>
+        <div style="font-size: 12px; color: #888; text-align: center; margin-bottom: 10px;">Автосброс смены происходит ежедневно в 06:00 утра</div>
+        <div class="summary-row">
+          <span>💳 Принято картой:</span>
+          <span style="color: #3498db;" id="totalCardSum">0 ₽</span>
+        </div>
+        <div class="summary-row">
+          <span>💵 Принято наличными:</span>
+          <span style="color: #2ecc71;" id="totalCashSum">0 ₽</span>
+        </div>
+        <hr style="margin: 8px 0; border: none; border-top: 1px solid var(--border-color);">
+        <div class="summary-row" style="font-size: 17px;">
+          <span>💰 Всего за день:</span>
+          <span id="totalDaySum">0 ₽</span>
+        </div>
+      </div>
+
+      <!-- История за 7 дней -->
+      <div class="history-box">
+        <h3>📜 История чеков (За последние 7 дней)</h3>
+        <div class="history-list" id="historyListContainer">
+          <p style="text-align: center; color: #888;">Загрузка истории...</p>
         </div>
       </div>
     </div>
@@ -213,7 +286,7 @@
       <div class="cards-list" id="cardsContainer"></div>
     </div>
 
-    <!-- Форма создания/редактирования позиций -->
+    <!-- Форма создания/редактирования -->
     <div class="admin-section" id="adminSection">
       <h2 id="formTitle">Добавить позицию</h2>
       <form id="addForm">
@@ -264,13 +337,14 @@
     const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
     
     let items = [];
+    let cart = [];
     let shops = [{ id: 1, name: 'Cafellini' }];
     let currentUser = null;
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
+    let currentTab = 'search';
 
-    // Переключение и загрузка Темы
     function initTheme() {
       const savedTheme = localStorage.getItem('coffee_app_theme') || 'light';
       document.documentElement.setAttribute('data-theme', savedTheme);
@@ -287,11 +361,173 @@
 
     function updateThemeBtnText(theme) {
       const btn = document.getElementById('themeToggleBtn');
-      if (theme === 'dark') {
-        btn.textContent = '☀️ Светлая';
+      btn.textContent = theme === 'dark' ? '☀️ Светлая' : '🌙 Тёмная';
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      if (tab === 'search') {
+        document.getElementById('tabSearchBtn').classList.add('active');
+        document.getElementById('tabReceiptsBtn').classList.remove('active');
+        document.getElementById('tabSearchSection').style.display = 'block';
+        document.getElementById('tabReceiptsSection').style.display = 'none';
       } else {
-        btn.textContent = '🌙 Тёмная';
+        document.getElementById('tabSearchBtn').classList.remove('active');
+        document.getElementById('tabReceiptsBtn').classList.add('active');
+        document.getElementById('tabSearchSection').style.display = 'none';
+        document.getElementById('tabReceiptsSection').style.display = 'block';
+        fetchDailySales();
       }
+    }
+
+    function addToCart(item) {
+      const priceNumeric = parsePrice(item.price);
+      cart.push({ ...item, numericPrice: priceNumeric });
+      updateCartUI();
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function parsePrice(priceStr) {
+      if (!priceStr) return 0;
+      const match = priceStr.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    }
+
+    function updateCartUI() {
+      document.getElementById('cartCountBadge').textContent = cart.length;
+      const container = document.getElementById('orderItemsContainer');
+      
+      if (cart.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #888;">В чеке пока нет позиций</p>';
+        document.getElementById('orderTotalSum').textContent = '0';
+        return;
+      }
+
+      container.innerHTML = '';
+      let total = 0;
+      cart.forEach((item, index) => {
+        total += item.numericPrice;
+        container.innerHTML += `
+          <div class="order-item">
+            <span><strong>${escapeHtml(item.title)}</strong> (${item.numericPrice} ₽)</span>
+            <button onclick="removeFromCart(${index})" style="background:#ff4d4d; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer;">✕</button>
+          </div>
+        `;
+      });
+
+      document.getElementById('orderTotalSum').textContent = total;
+    }
+
+    // Расчёт старта текущих суток смены (с 06:00 до 06:00)
+    function getShiftStartTime() {
+      const now = new Date();
+      const shiftStart = new Date(now);
+      
+      if (now.getHours() < 6) {
+        shiftStart.setDate(shiftStart.getDate() - 1);
+      }
+      shiftStart.setHours(6, 0, 0, 0);
+      return shiftStart.toISOString();
+    }
+
+    async function processPayment(method) {
+      if (cart.length === 0) return alert('Чек пуст!');
+
+      const totalAmount = cart.reduce((sum, item) => sum + item.numericPrice, 0);
+      const paymentName = method === 'card' ? 'Карта' : 'Наличные';
+      const itemsSummary = cart.map(i => i.title).join(', ');
+
+      if (!confirm(`Провести чек на сумму ${totalAmount} ₽ (${paymentName})?`)) return;
+
+      const receiptPayload = {
+        id: Date.now(),
+        shop_id: currentUser.shop_id,
+        amount: totalAmount,
+        payment_method: method,
+        items_summary: itemsSummary,
+        created_at: new Date().toISOString()
+      };
+
+      const { error } = await db.from('sales').insert(receiptPayload);
+
+      if (error) {
+        alert('Ошибка проведения оплаты: ' + error.message);
+      } else {
+        alert('✅ Чек успешно проведён!');
+        cart = [];
+        updateCartUI();
+        fetchDailySales();
+      }
+    }
+
+    async function fetchDailySales() {
+      const shiftStart = getShiftStartTime();
+      
+      // Вычисляем время за последние 7 дней для истории
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data, error } = await db.from('sales')
+        .select('*')
+        .eq('shop_id', currentUser.shop_id)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('id', { ascending: false });
+
+      if (error) {
+        console.error('Ошибка загрузки продаж:', error);
+        return;
+      }
+
+      const salesList = data || [];
+
+      // 1. Считаем выручку ТЕКУЩЕЙ смены (после shiftStart)
+      let cardSum = 0;
+      let cashSum = 0;
+
+      const currentShiftStartTs = new Date(shiftStart).getTime();
+
+      salesList.forEach(sale => {
+        const saleTime = new Date(sale.created_at).getTime();
+        if (saleTime >= currentShiftStartTs) {
+          if (sale.payment_method === 'card') cardSum += Number(sale.amount);
+          if (sale.payment_method === 'cash') cashSum += Number(sale.amount);
+        }
+      });
+
+      document.getElementById('totalCardSum').textContent = `${cardSum} ₽`;
+      document.getElementById('totalCashSum').textContent = `${cashSum} ₽`;
+      document.getElementById('totalDaySum').textContent = `${cardSum + cashSum} ₽`;
+
+      // 2. Выводим ИСТОРИЮ чеков за последние 7 дней
+      const historyContainer = document.getElementById('historyListContainer');
+      if (salesList.length === 0) {
+        historyContainer.innerHTML = '<p style="text-align: center; color: #888;">За последние 7 дней чеков не найдено</p>';
+        return;
+      }
+
+      historyContainer.innerHTML = '';
+      salesList.forEach(sale => {
+        const dateObj = new Date(sale.created_at);
+        const dateStr = dateObj.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+        const timeStr = dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const isCard = sale.payment_method === 'card';
+
+        historyContainer.innerHTML += `
+          <div class="history-item">
+            <div>
+              <strong>${sale.amount} ₽</strong> — <span class="${isCard ? 'history-badge-card' : 'history-badge-cash'}">${isCard ? 'Карта' : 'Наличные'}</span>
+              <div style="font-size: 11px; color: var(--secondary-text); margin-top: 2px;">${escapeHtml(sale.items_summary || 'Без состава')}</div>
+            </div>
+            <div style="font-size: 12px; color: var(--secondary-text); text-align: right;">
+              ${dateStr}<br>${timeStr}
+            </div>
+          </div>
+        `;
+      });
     }
 
     async function loadShops() {
@@ -377,6 +613,7 @@
 
       initTags();
       fetchItems();
+      fetchDailySales();
     }
 
     function logout() {
@@ -579,14 +816,15 @@
         const isBarista = currentUser.role === 'barista';
         const isResidualTag = item.tags.includes("Остаток");
 
-        let actionsHtml = '';
+        let actionsHtml = `<button class="btn-add-cart" onclick='addToCart(${JSON.stringify(item)})'>+ В чек</button>`;
+
         if (!isBarista) {
-          actionsHtml = `
-            <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
+          actionsHtml += `
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
+            <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
           `;
         } else if (isBarista && isResidualTag) {
-          actionsHtml = `<button class="btn-edit" onclick="editItem(${item.id})">Изм. остаток</button>`;
+          actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">Изм. остаток</button>`;
         }
 
         if (isShiftMode && isResidualTag) {
