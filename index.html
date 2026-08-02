@@ -13,60 +13,104 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f8; color: #333; padding: 15px; max-width: 800px; margin: 0 auto; }
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --heading-color: #2c3e50;
+      --border-color: #e0e0e0;
+      --secondary-bg: #eef2f5;
+      --secondary-text: #555555;
+      --input-bg: #ffffff;
+      --shadow: rgba(0,0,0,0.08);
+      --card-shadow: rgba(0,0,0,0.06);
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #1e252b;
+      --card-bg: #2a343d;
+      --text-color: #e1e6eb;
+      --heading-color: #f0f4f8;
+      --border-color: #3a4754;
+      --secondary-bg: #34404c;
+      --secondary-text: #b0bec5;
+      --input-bg: #242c34;
+      --shadow: rgba(0,0,0,0.3);
+      --card-shadow: rgba(0,0,0,0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background-color 0.25s, color 0.25s, border-color 0.25s; }
+    body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; max-width: 800px; margin: 0 auto; }
     
-    h1, h2, h3 { text-align: center; margin-bottom: 12px; color: #2c3e50; }
+    h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
     
+    /* КНОПКА ТЕМЫ */
+    .theme-toggle-btn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: var(--secondary-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 999;
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+
     /* ЭКРАН ЛОГИНА */
-    .login-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; }
-    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
+    .login-container { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow); max-width: 400px; margin: 40px auto; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
 
     /* ШАПКА ПОЛЬЗОВАТЕЛЯ */
-    .user-bar { background: #eef2f5; padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; }
+    .user-bar { background: var(--secondary-bg); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; }
     .btn-logout { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 
     /* ПАНЕЛЬ АДМИНИСТРАТОРА */
-    .admin-tools { background: #eef7ed; border: 1px solid #c3e6cb; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+    .admin-tools { background: var(--card-bg); border: 1px solid #27ae60; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
     .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 600px) { .admin-grid { grid-template-columns: 1fr; } }
 
     /* СЕКЦИЯ ПОИСКА И ТЕГОВ */
-    .search-box { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; outline: none; }
+    .search-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 20px; }
+    .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 12px; outline: none; }
     
     .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-    .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: #eef2f5; color: #555; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: var(--secondary-bg); color: var(--secondary-text); cursor: pointer; font-size: 14px; font-weight: 500; }
     .tag-btn.active { background: #3498db; color: white; }
 
-    .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e0e0e0; }
+    .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
     .shift-actions { display: flex; flex-direction: column; gap: 8px; }
     .btn-shift { width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .btn-shift.active { background: #e74c3c; }
     .btn-report { width: 100%; background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
 
-    .report-preview-box { display: none; margin-top: 12px; background: #f8f9fa; border: 1px solid #ced4da; padding: 12px; border-radius: 8px; }
-    .report-textarea { width: 100%; height: 110px; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; }
+    .report-preview-box { display: none; margin-top: 12px; background: var(--secondary-bg); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; }
+    .report-textarea { width: 100%; height: 110px; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; resize: vertical; }
 
     /* КАРТОЧКИ */
     .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
     .cards-list { display: grid; gap: 15px; }
-    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; }
+    .card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px var(--card-shadow); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; }
     
-    .card.shift-uncheck { border-color: #e74c3c !important; background-color: #fff5f5; }
-    .card.shift-checked { border-color: #2ecc71 !important; background-color: #f6fff7; }
+    /* Статусы смены с уклоном под тёмный режим */
+    .card.shift-uncheck { border-color: #e74c3c !important; background-color: rgba(231, 76, 60, 0.12) !important; }
+    .card.shift-checked { border-color: #2ecc71 !important; background-color: rgba(46, 204, 113, 0.12) !important; }
 
-    .card-header { border-bottom: 1px solid #eee; padding-bottom: 8px; padding-right: 75px; min-height: 38px; }
-    .card-title { font-size: 18px; font-weight: bold; color: #2c3e50; }
-    .card-price { font-size: 15px; font-weight: bold; color: #27ae60; margin-top: 2px; }
-    .card-calories { font-size: 13px; color: #7f8c8d; margin-top: 1px; }
+    .card-header { border-bottom: 1px solid var(--border-color); padding-bottom: 8px; padding-right: 75px; min-height: 38px; }
+    .card-title { font-size: 18px; font-weight: bold; color: var(--heading-color); }
+    .card-price { font-size: 15px; font-weight: bold; color: #2ecc71; margin-top: 2px; }
+    .card-calories { font-size: 13px; color: var(--secondary-text); margin-top: 1px; }
 
     .card-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .card-tag { background: #eef2f5; color: #666; font-size: 12px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .card-tag { background: var(--secondary-bg); color: var(--secondary-text); font-size: 12px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
     
     .card-body { display: flex; gap: 15px; }
-    .card-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
-    .card-content { flex-grow: 1; font-size: 14px; line-height: 1.4; white-space: pre-line; color: #444; }
+    .card-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; background: var(--secondary-bg); flex-shrink: 0; }
+    .card-content { flex-grow: 1; font-size: 14px; line-height: 1.4; white-space: pre-line; color: var(--text-color); }
     
     .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 75px; }
     .btn-edit { background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
@@ -75,20 +119,23 @@
     .btn-check-item.checked { background: #2ecc71; }
 
     /* ФОРМА ДОБАВЛЕНИЯ */
-    .admin-section { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
+    .admin-section { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 25px; }
     .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: var(--heading-color); }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; font-size: 14px; }
     .form-group textarea { height: 80px; resize: vertical; }
     .checkbox-tags { display: flex; flex-wrap: wrap; gap: 10px; }
-    .checkbox-tags label { font-weight: normal; font-size: 14px; cursor: pointer; }
+    .checkbox-tags label { font-weight: normal; font-size: 14px; cursor: pointer; color: var(--text-color); }
     
     .btn-submit { width: 100%; background: #2ecc71; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
     .btn-cancel { width: 100%; background: #95a5a6; color: white; border: none; padding: 8px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 5px; display: none; }
-    .status-badge { text-align: center; font-size: 12px; color: #27ae60; margin-bottom: 10px; font-weight: bold; }
+    .status-badge { text-align: center; font-size: 12px; color: #2ecc71; margin-bottom: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
+
+  <!-- Кнопка переключения темы -->
+  <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙 Тёмная</button>
 
   <!-- Окно Логина -->
   <div class="login-container" id="loginBlock">
@@ -210,7 +257,7 @@
 
   <script>
     const SUPABASE_URL = 'https://pigciguqbzeiyaanougn.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZ2NpZ3VxYnplaXlhYW5vdWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NjY5NDQsImV4cCI6MjEwMTI0Mjk0NH0.iKDW6c6f286G48oCcRyCuQmqdoEmw6PZvk73uAwSf9U';
+    const SUPABASE_KEY = 'sb_secret_vFA29SCwvzwW3Wibw12mbQ_opoxCojM';
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -223,7 +270,30 @@
     let isShiftMode = false;
     let checkedShiftIds = new Set();
 
-    // Загрузка кофеен
+    // Переключение и загрузка Темы
+    function initTheme() {
+      const savedTheme = localStorage.getItem('coffee_app_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeBtnText(savedTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('coffee_app_theme', newTheme);
+      updateThemeBtnText(newTheme);
+    }
+
+    function updateThemeBtnText(theme) {
+      const btn = document.getElementById('themeToggleBtn');
+      if (theme === 'dark') {
+        btn.textContent = '☀️ Светлая';
+      } else {
+        btn.textContent = '🌙 Тёмная';
+      }
+    }
+
     async function loadShops() {
       const select = document.getElementById('loginShopSelect');
       select.innerHTML = '<option value="1">Cafellini</option>';
@@ -240,18 +310,35 @@
       } catch (e) {
         console.error('Ошибка загрузки кофеен:', e);
       }
+
+      checkSavedSession();
     }
 
-    // Авторизация
+    function saveSession(user) {
+      localStorage.setItem('coffee_app_user', JSON.stringify(user));
+    }
+
+    function checkSavedSession() {
+      const savedUser = localStorage.getItem('coffee_app_user');
+      if (savedUser) {
+        try {
+          currentUser = JSON.parse(savedUser);
+          initApp();
+        } catch(e) {
+          localStorage.removeItem('coffee_app_user');
+        }
+      }
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const shopId = Number(document.getElementById('loginShopSelect').value);
       const login = document.getElementById('loginName').value.trim();
       const pass = document.getElementById('loginPassword').value.trim();
 
-      // Мастер-логин для гарантированного входа админа
       if (login === 'admin' && pass === 'admin123') {
         currentUser = { id: 1, login: 'admin', role: 'admin', shop_id: shopId };
+        saveSession(currentUser);
         initApp();
         return;
       }
@@ -266,6 +353,7 @@
         alert('Неверный логин, пароль или кофейня!');
       } else {
         currentUser = data;
+        saveSession(currentUser);
         initApp();
       }
     });
@@ -293,6 +381,7 @@
 
     function logout() {
       currentUser = null;
+      localStorage.removeItem('coffee_app_user');
       document.getElementById('loginBlock').style.display = 'block';
       document.getElementById('mainAppBlock').style.display = 'none';
     }
@@ -662,6 +751,7 @@
     }
 
     document.getElementById('searchInput').addEventListener('input', renderCards);
+    initTheme();
     loadShops();
   </script>
 </body>
