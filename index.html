@@ -152,7 +152,7 @@
     let items = [];
     let selectedTag = null;
     let isShiftMode = false;
-    let checkedShiftIds = new Set(); // Хранит только проверенные позиции
+    let checkedShiftIds = new Set();
 
     const cardsContainer = document.getElementById('cardsContainer');
     const searchInput = document.getElementById('searchInput');
@@ -207,15 +207,15 @@
       renderCards();
     }
 
-    // Включение / запуск проверки смены
+    // Включение / перезапуск смены
     btnShiftToggle.addEventListener('click', () => {
       isShiftMode = !isShiftMode;
+      checkedShiftIds.clear(); // СБРОС при каждом нажатии!
+
       if (isShiftMode) {
-        checkedShiftIds.clear(); // СБРАСЫВАЕМ ВСЕ: при старте все карточки снова КРАСНЫЕ
         btnShiftToggle.classList.add('active');
         btnShiftToggle.textContent = '❌ Завершить проверку смены';
       } else {
-        checkedShiftIds.clear();
         btnShiftToggle.classList.remove('active');
         btnShiftToggle.textContent = '📋 Начать проверку смены';
       }
@@ -256,7 +256,6 @@
         const card = document.createElement('div');
         card.className = 'card';
         
-        // В режиме смены логика строгая: если проверено -> зелёный, если нет -> красный
         if (isShiftMode && item.tags.includes("Остаток")) {
           if (checkedShiftIds.has(item.id)) {
             card.classList.add('shift-checked');
@@ -266,7 +265,6 @@
         }
 
         const defaultImg = 'https://via.placeholder.com/150?text=No+Image';
-
         const isItemChecked = checkedShiftIds.has(item.id);
 
         card.innerHTML = `
@@ -296,9 +294,32 @@
         `;
         cardsContainer.appendChild(card);
       });
+
+      // Проверка на то, все ли карточки с тегом "Остаток" проверены
+      checkAutoCloseShift();
     }
 
-    // Переключение конкретного остатка (красный <-> зеленый)
+    // Авто-закрытие, если всё зелёное
+    function checkAutoCloseShift() {
+      if (!isShiftMode) return;
+
+      const residualItems = items.filter(item => item.tags.includes("Остаток"));
+      if (residualItems.length === 0) return;
+
+      const allChecked = residualItems.every(item => checkedShiftIds.has(item.id));
+
+      if (allChecked) {
+        setTimeout(() => {
+          alert('🎉 Все позиции смены успешно проверены!');
+          isShiftMode = false;
+          checkedShiftIds.clear();
+          btnShiftToggle.classList.remove('active');
+          btnShiftToggle.textContent = '📋 Начать проверку смены';
+          renderCards();
+        }, 300);
+      }
+    }
+
     window.toggleCheckShift = function(id) {
       if (checkedShiftIds.has(id)) {
         checkedShiftIds.delete(id);
@@ -363,7 +384,6 @@
       if (error) {
         alert('Ошибка при сохранении: ' + error.message);
       } else {
-        // Если меняем позицию во время смены, отмечаем её зеленым
         if (editId && isShiftMode) {
           checkedShiftIds.add(Number(editId));
         }
