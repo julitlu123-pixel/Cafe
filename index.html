@@ -4,8 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>База техкарт и меню</title>
-  <!-- Вот сюда вставляем иконку: -->
+  
+  <!-- Иконка сайта (☕) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+  
+  <!-- PWA настройки для установки на экран смартфона -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Техкарты">
+
   <!-- Подключаем библиотеку Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -23,10 +31,18 @@
     .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: #eef2f5; color: #555; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
     .tag-btn.active { background: #3498db; color: white; }
 
-    /* Панель смены */
+    /* Панель смены и отчёта */
     .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e0e0e0; }
+    .shift-actions { display: flex; flex-direction: column; gap: 8px; }
     .btn-shift { width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     .btn-shift.active { background: #e74c3c; }
+    .btn-report { width: 100%; background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-report:hover { background: #219150; }
+
+    /* Блок готового отчёта */
+    .report-preview-box { display: none; margin-top: 12px; background: #f8f9fa; border: 1px solid #ced4da; padding: 12px; border-radius: 8px; }
+    .report-preview-box h3 { font-size: 14px; margin-bottom: 6px; color: #2c3e50; }
+    .report-textarea { width: 100%; height: 110px; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; background: #fff; }
     
     /* Контейнер для списка блюд с прокруткой */
     .cards-scroll-container {
@@ -93,8 +109,17 @@
   <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
     <div class="tags-filter" id="tagsFilter"></div>
+    
     <div class="shift-panel" id="shiftPanel">
-      <button class="btn-shift" id="btnShiftToggle">📋 Начать проверку смены</button>
+      <div class="shift-actions">
+        <button class="btn-shift" id="btnShiftToggle">📋 Начать проверку смены</button>
+        <button class="btn-report" id="btnGenerateReport">📲 Скопировать отчёт в буфер</button>
+      </div>
+
+      <div class="report-preview-box" id="reportPreviewBox">
+        <h3>Готовый отчёт (скопирован):</h3>
+        <textarea id="reportTextarea" class="report-textarea" readonly></textarea>
+      </div>
     </div>
   </div>
 
@@ -162,6 +187,9 @@
     const tagCheckboxesContainer = document.getElementById('tagCheckboxes');
     const shiftPanel = document.getElementById('shiftPanel');
     const btnShiftToggle = document.getElementById('btnShiftToggle');
+    const btnGenerateReport = document.getElementById('btnGenerateReport');
+    const reportPreviewBox = document.getElementById('reportPreviewBox');
+    const reportTextarea = document.getElementById('reportTextarea');
     const addForm = document.getElementById('addForm');
 
     function initTags() {
@@ -187,6 +215,7 @@
         selectedTag = null;
         btnElement.classList.remove('active');
         shiftPanel.style.display = 'none';
+        reportPreviewBox.style.display = 'none';
         isShiftMode = false;
         checkedShiftIds.clear();
         btnShiftToggle.classList.remove('active');
@@ -200,6 +229,7 @@
           shiftPanel.style.display = 'block';
         } else {
           shiftPanel.style.display = 'none';
+          reportPreviewBox.style.display = 'none';
           isShiftMode = false;
           checkedShiftIds.clear();
           btnShiftToggle.classList.remove('active');
@@ -212,7 +242,7 @@
     // Включение / перезапуск смены
     btnShiftToggle.addEventListener('click', () => {
       isShiftMode = !isShiftMode;
-      checkedShiftIds.clear(); // СБРОС при каждом нажатии!
+      checkedShiftIds.clear();
 
       if (isShiftMode) {
         btnShiftToggle.classList.add('active');
@@ -222,6 +252,39 @@
         btnShiftToggle.textContent = '📋 Начать проверку смены';
       }
       renderCards();
+    });
+
+    // Генерация и копирование отчёта
+    btnGenerateReport.addEventListener('click', () => {
+      const residualItems = items.filter(item => item.tags.includes("Остаток"));
+      
+      if (residualItems.length === 0) {
+        alert('Пока нет позиций с тегом "Остаток"!');
+        return;
+      }
+
+      const today = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      let reportText = `☕ Отчёт по остаткам (${today}):\n────────────────────\n`;
+
+      residualItems.forEach((item, index) => {
+        const cleanRecipe = item.recipe.replace(/\n/g, ' ');
+        reportText += `${index + 1}. ${item.title} — ${cleanRecipe}\n`;
+      });
+
+      reportText += `────────────────────\nСмена сдана! ✨`;
+
+      reportTextarea.value = reportText;
+      reportPreviewBox.style.display = 'block';
+
+      // Копирование в буфер
+      navigator.clipboard.writeText(reportText).then(() => {
+        alert('📋 Отчёт скопирован в буфер обмена! Можно вставлять в рабочий чат.');
+      }).catch(err => {
+        // Запасной вариант копирования
+        reportTextarea.select();
+        document.execCommand('copy');
+        alert('📋 Отчёт скопирован!');
+      });
     });
 
     async function fetchItems() {
@@ -297,11 +360,9 @@
         cardsContainer.appendChild(card);
       });
 
-      // Проверка на то, все ли карточки с тегом "Остаток" проверены
       checkAutoCloseShift();
     }
 
-    // Авто-закрытие, если всё зелёное
     function checkAutoCloseShift() {
       if (!isShiftMode) return;
 
