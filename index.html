@@ -5,62 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>База техкарт и меню</title>
   
-  <!-- Иконка сайта (☕) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
-  
-  <!-- PWA настройки для установки на экран смартфона -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Техкарты">
 
-  <!-- Подключаем библиотеку Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #f4f6f8; color: #333; padding: 15px; max-width: 800px; margin: 0 auto; }
     
-    h1, h2 { text-align: center; margin-bottom: 15px; color: #2c3e50; }
+    h1, h2, h3 { text-align: center; margin-bottom: 12px; color: #2c3e50; }
     
-    /* Секция поиска и фильтров */
+    /* ЭКРАН ЛОГИНА */
+    .login-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
+
+    /* ШАПКА ПОЛЬЗОВАТЕЛЯ */
+    .user-bar { background: #eef2f5; padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; }
+    .btn-logout { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+    /* ПАНЕЛЬ АДМИНИСТРАТОРА */
+    .admin-tools { background: #eef7ed; border: 1px solid #c3e6cb; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .admin-grid { grid-template-columns: 1fr; } }
+
+    /* СЕКЦИЯ ПОИСКА И ТЕГОВ */
     .search-box { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-    .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; outline: none; transition: border 0.2s; }
-    .search-input:focus { border-color: #3498db; }
+    .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; outline: none; }
     
     .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-    .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: #eef2f5; color: #555; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+    .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: #eef2f5; color: #555; cursor: pointer; font-size: 14px; font-weight: 500; }
     .tag-btn.active { background: #3498db; color: white; }
 
-    /* Панель смены и отчёта */
     .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e0e0e0; }
     .shift-actions { display: flex; flex-direction: column; gap: 8px; }
-    .btn-shift { width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .btn-shift { width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .btn-shift.active { background: #e74c3c; }
-    .btn-report { width: 100%; background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-    .btn-report:hover { background: #219150; }
+    .btn-report { width: 100%; background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
 
-    /* Блок готового отчёта */
     .report-preview-box { display: none; margin-top: 12px; background: #f8f9fa; border: 1px solid #ced4da; padding: 12px; border-radius: 8px; }
-    .report-preview-box h3 { font-size: 14px; margin-bottom: 6px; color: #2c3e50; }
-    .report-textarea { width: 100%; height: 110px; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; background: #fff; }
-    
-    /* Контейнер для списка блюд с прокруткой */
-    .cards-scroll-container {
-      max-height: 480px;
-      overflow-y: auto;
-      padding-right: 6px;
-      margin-bottom: 25px;
-    }
-    
-    .cards-scroll-container::-webkit-scrollbar { width: 6px; }
-    .cards-scroll-container::-webkit-scrollbar-track { background: #eef2f5; border-radius: 4px; }
-    .cards-scroll-container::-webkit-scrollbar-thumb { background: #bdc3c7; border-radius: 4px; }
+    .report-textarea { width: 100%; height: 110px; font-family: monospace; font-size: 13px; padding: 8px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; }
 
-    /* Список блюд */
+    /* КАРТОЧКИ */
+    .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
     .cards-list { display: grid; gap: 15px; }
-    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; transition: all 0.3s; }
+    .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; }
     
-    /* Статусы смены для тега Остаток */
     .card.shift-uncheck { border-color: #e74c3c !important; background-color: #fff5f5; }
     .card.shift-checked { border-color: #2ecc71 !important; background-color: #f6fff7; }
 
@@ -79,94 +71,141 @@
     .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 75px; }
     .btn-edit { background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
     .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
-    
     .btn-check-item { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 5px 6px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; margin-top: 2px; }
     .btn-check-item.checked { background: #2ecc71; }
 
-    /* Форма добавления/редактирования */
+    /* ФОРМА ДОБАВЛЕНИЯ */
     .admin-section { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 25px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
     .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
     .form-group textarea { height: 80px; resize: vertical; }
-    
     .checkbox-tags { display: flex; flex-wrap: wrap; gap: 10px; }
     .checkbox-tags label { font-weight: normal; font-size: 14px; cursor: pointer; }
     
     .btn-submit { width: 100%; background: #2ecc71; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-    .btn-submit:hover { background: #27ae60; }
     .btn-cancel { width: 100%; background: #95a5a6; color: white; border: none; padding: 8px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 5px; display: none; }
-    
     .status-badge { text-align: center; font-size: 12px; color: #27ae60; margin-bottom: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <h1>Техкарты и Состав</h1>
-  <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
-
-  <!-- Блок Поиска -->
-  <div class="search-box">
-    <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
-    <div class="tags-filter" id="tagsFilter"></div>
-    
-    <div class="shift-panel" id="shiftPanel">
-      <div class="shift-actions">
-        <button class="btn-shift" id="btnShiftToggle">📋 Начать проверку смены</button>
-        <button class="btn-report" id="btnGenerateReport">📲 Скопировать отчёт в буфер</button>
+  <!-- Окно Логина -->
+  <div class="login-container" id="loginBlock">
+    <h2>☕ Вход в систему</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Кофейня:</label>
+        <select id="loginShopSelect" class="form-control" required></select>
       </div>
+      <div class="form-group">
+        <label>Логин:</label>
+        <input type="text" id="loginName" class="form-control" required placeholder="Введите логин">
+      </div>
+      <div class="form-group">
+        <label>Пароль:</label>
+        <input type="password" id="loginPassword" class="form-control" required placeholder="Введите пароль">
+      </div>
+      <button type="submit" class="btn-submit" style="margin-top: 0;">Войти</button>
+    </form>
+  </div>
 
-      <div class="report-preview-box" id="reportPreviewBox">
-        <h3>Готовый отчёт (скопирован):</h3>
-        <textarea id="reportTextarea" class="report-textarea" readonly></textarea>
+  <!-- Главный экран приложения -->
+  <div id="mainAppBlock" style="display: none;">
+    <div class="user-bar">
+      <div>
+        <strong>Кофейня:</strong> <span id="userShopName"></span> | 
+        <strong>Пользователь:</strong> <span id="userName"></span> (<span id="userRole"></span>)
+      </div>
+      <button class="btn-logout" onclick="logout()">Выйти</button>
+    </div>
+
+    <h1>Техкарты и Состав</h1>
+    <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
+
+    <!-- Инструменты Управления (Видимы только для Админа) -->
+    <div class="admin-tools" id="adminToolsPanel" style="display: none;">
+      <h3>⚙️ Управление системой (Администратор)</h3>
+      <div class="admin-grid">
+        <!-- Добавление кофейни -->
+        <div>
+          <label style="font-size: 12px; font-weight: bold;">Добавить новую кофейню:</label>
+          <input type="text" id="newShopName" class="form-control" placeholder="Название новой кофейни">
+          <button onclick="createNewShop()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0;">Создать кофейню (скопировать меню)</button>
+        </div>
+        <!-- Добавление бариста -->
+        <div>
+          <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
+          <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин бариста" style="margin-bottom: 4px;">
+          <input type="password" id="newBaristaPass" class="form-control" placeholder="Пароль" style="margin-bottom: 4px;">
+          <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: #3498db;">Зарегистрировать бариста</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Окно списка блюд -->
-  <div class="cards-scroll-container">
-    <div class="cards-list" id="cardsContainer"></div>
-  </div>
-
-  <!-- Форма Редактора -->
-  <div class="admin-section" id="adminSection">
-    <h2 id="formTitle">Добавить позицию</h2>
-    <form id="addForm">
-      <input type="hidden" id="editItemId" value="">
+    <!-- Поиск -->
+    <div class="search-box">
+      <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
+      <div class="tags-filter" id="tagsFilter"></div>
       
-      <div class="form-group">
-        <label for="itemName">Название:</label>
-        <input type="text" id="itemName" required placeholder="Например: Капучино 300мл или Стаканчик средний">
-      </div>
+      <div class="shift-panel" id="shiftPanel">
+        <div class="shift-actions">
+          <button class="btn-shift" id="btnShiftToggle">📋 Начать проверку смены</button>
+          <button class="btn-report" id="btnGenerateReport">📲 Скопировать отчёт в буфер</button>
+        </div>
 
-      <div class="form-group">
-        <label for="itemPrice">Цена:</label>
-        <input type="text" id="itemPrice" placeholder="Например: 190₽">
+        <div class="report-preview-box" id="reportPreviewBox">
+          <h3>Готовый отчёт (скопирован):</h3>
+          <textarea id="reportTextarea" class="report-textarea" readonly></textarea>
+        </div>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label for="itemCalories">Калорийность:</label>
-        <input type="text" id="itemCalories" placeholder="Например: 140 ккал">
-      </div>
-      
-      <div class="form-group">
-        <label>Теги:</label>
-        <div class="checkbox-tags" id="tagCheckboxes"></div>
-      </div>
+    <!-- Карточки -->
+    <div class="cards-scroll-container">
+      <div class="cards-list" id="cardsContainer"></div>
+    </div>
 
-      <div class="form-group">
-        <label for="itemImg">Ссылка на картинку (URL):</label>
-        <input type="url" id="itemImg" placeholder="https://example.com/image.jpg">
-      </div>
+    <!-- Форма создания/редактирования позиций -->
+    <div class="admin-section" id="adminSection">
+      <h2 id="formTitle">Добавить позицию</h2>
+      <form id="addForm">
+        <input type="hidden" id="editItemId" value="">
+        
+        <div class="form-group">
+          <label for="itemName">Название:</label>
+          <input type="text" id="itemName" required placeholder="Например: Капучино 300мл">
+        </div>
 
-      <div class="form-group">
-        <label for="itemRecipe">Состав / Техническая карта / Остаток:</label>
-        <textarea id="itemRecipe" required placeholder="Эспрессо: 30 мл&#10;Молоко: 220 мл&#10;или Остаток: 45 шт"></textarea>
-      </div>
+        <div class="form-group">
+          <label for="itemPrice">Цена:</label>
+          <input type="text" id="itemPrice" placeholder="Например: 190₽">
+        </div>
 
-      <button type="submit" class="btn-submit" id="btnSubmit">Сохранить позицию</button>
-      <button type="button" class="btn-cancel" id="btnCancel" onclick="resetForm()">Отмена редактирования</button>
-    </form>
+        <div class="form-group">
+          <label for="itemCalories">Калорийность:</label>
+          <input type="text" id="itemCalories" placeholder="Например: 140 ккал">
+        </div>
+        
+        <div class="form-group">
+          <label>Теги:</label>
+          <div class="checkbox-tags" id="tagCheckboxes"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="itemImg">Ссылка на картинку (URL):</label>
+          <input type="url" id="itemImg" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="form-group">
+          <label for="itemRecipe">Состав / Техническая карта / Остаток:</label>
+          <textarea id="itemRecipe" required placeholder="Эспрессо: 30 мл&#10;Молоко: 220 мл"></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" id="btnSubmit">Сохранить позицию</button>
+        <button type="button" class="btn-cancel" id="btnCancel" onclick="resetForm()">Отмена редактирования</button>
+      </form>
+    </div>
   </div>
 
   <script>
@@ -176,23 +215,131 @@
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
+    
     let items = [];
+    let shops = [];
+    let currentUser = null;
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
 
-    const cardsContainer = document.getElementById('cardsContainer');
-    const searchInput = document.getElementById('searchInput');
-    const tagsFilterContainer = document.getElementById('tagsFilter');
-    const tagCheckboxesContainer = document.getElementById('tagCheckboxes');
-    const shiftPanel = document.getElementById('shiftPanel');
-    const btnShiftToggle = document.getElementById('btnShiftToggle');
-    const btnGenerateReport = document.getElementById('btnGenerateReport');
-    const reportPreviewBox = document.getElementById('reportPreviewBox');
-    const reportTextarea = document.getElementById('reportTextarea');
-    const addForm = document.getElementById('addForm');
+    // Загрузка кофеен для формы логина
+    async function loadShops() {
+      const { data } = await db.from('coffee_shops').select('*');
+      shops = data || [];
+      const select = document.getElementById('loginShopSelect');
+      select.innerHTML = '';
+      shops.forEach(s => {
+        select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+      });
+    }
+
+    // Обработка Авторизации
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const shopId = Number(document.getElementById('loginShopSelect').value);
+      const login = document.getElementById('loginName').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+
+      const { data, error } = await db.from('users').select('*')
+        .eq('login', login)
+        .eq('password', pass)
+        .eq('shop_id', shopId)
+        .single();
+
+      if (error || !data) {
+        alert('Неверный логин, пароль или выбранная кофейня!');
+      } else {
+        currentUser = data;
+        initApp();
+      }
+    });
+
+    function initApp() {
+      document.getElementById('loginBlock').style.display = 'none';
+      document.getElementById('mainAppBlock').style.display = 'block';
+
+      const shop = shops.find(s => s.id === currentUser.shop_id);
+      document.getElementById('userShopName').textContent = shop ? shop.name : '';
+      document.getElementById('userName').textContent = currentUser.login;
+      document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Администратор' : 'Бариста';
+
+      if (currentUser.role === 'admin') {
+        document.getElementById('adminToolsPanel').style.display = 'block';
+        document.getElementById('adminSection').style.display = 'block';
+      } else {
+        document.getElementById('adminToolsPanel').style.display = 'none';
+        // Для бариста скрываем форму полного создания, пока он не редактирует остаток
+        document.getElementById('adminSection').style.display = 'none';
+      }
+
+      initTags();
+      fetchItems();
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById('loginBlock').style.display = 'block';
+      document.getElementById('mainAppBlock').style.display = 'none';
+    }
+
+    // Админ: Создание новой кофейни с копированием рецептов
+    async function createNewShop() {
+      const name = document.getElementById('newShopName').value.trim();
+      if (!name) return alert('Введите название кофейни');
+
+      const newShopId = Date.now();
+      const { error: shopError } = await db.from('coffee_shops').insert({ id: newShopId, name });
+      
+      if (shopError) return alert('Ошибка создания: ' + shopError.message);
+
+      // Копируем ассортимент из первой кофейни (id = 1)
+      const { data: baseRecipes } = await db.from('recipes').select('*').eq('shop_id', 1);
+      
+      if (baseRecipes && baseRecipes.length > 0) {
+        const clonedRecipes = baseRecipes.map(r => ({
+          id: Date.now() + Math.floor(Math.random() * 100000),
+          title: r.title,
+          price: r.price,
+          calories: r.calories,
+          tags: r.tags,
+          img: r.img,
+          recipe: r.recipe,
+          shop_id: newShopId
+        }));
+        await db.from('recipes').insert(clonedRecipes);
+      }
+
+      alert(`Кофейня "${name}" успешно создана! Ассортимент скопирован.`);
+      document.getElementById('newShopName').value = '';
+      loadShops();
+    }
+
+    // Админ: Регистрация нового бариста
+    async function createNewBarista() {
+      const login = document.getElementById('newBaristaLogin').value.trim();
+      const pass = document.getElementById('newBaristaPass').value.trim();
+      if (!login || !pass) return alert('Заполните логин и пароль бариста');
+
+      const { error } = await db.from('users').insert({
+        id: Date.now(),
+        login,
+        password: pass,
+        role: 'barista',
+        shop_id: currentUser.shop_id
+      });
+
+      if (error) return alert('Ошибка при создании: ' + error.message);
+
+      alert(`Бариста "${login}" успешно зарегистрирован для текущей кофейни!`);
+      document.getElementById('newBaristaLogin').value = '';
+      document.getElementById('newBaristaPass').value = '';
+    }
 
     function initTags() {
+      const tagsFilterContainer = document.getElementById('tagsFilter');
+      const tagCheckboxesContainer = document.getElementById('tagCheckboxes');
+      
       tagsFilterContainer.innerHTML = '';
       AVAILABLE_TAGS.forEach(tag => {
         const btn = document.createElement('button');
@@ -214,54 +361,48 @@
       if (selectedTag === tag) {
         selectedTag = null;
         btnElement.classList.remove('active');
-        shiftPanel.style.display = 'none';
-        reportPreviewBox.style.display = 'none';
+        document.getElementById('shiftPanel').style.display = 'none';
+        document.getElementById('reportPreviewBox').style.display = 'none';
         isShiftMode = false;
         checkedShiftIds.clear();
-        btnShiftToggle.classList.remove('active');
-        btnShiftToggle.textContent = '📋 Начать проверку смены';
+        document.getElementById('btnShiftToggle').classList.remove('active');
+        document.getElementById('btnShiftToggle').textContent = '📋 Начать проверку смены';
       } else {
         document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
         selectedTag = tag;
         btnElement.classList.add('active');
 
         if (tag === "Остаток") {
-          shiftPanel.style.display = 'block';
+          document.getElementById('shiftPanel').style.display = 'block';
         } else {
-          shiftPanel.style.display = 'none';
-          reportPreviewBox.style.display = 'none';
+          document.getElementById('shiftPanel').style.display = 'none';
+          document.getElementById('reportPreviewBox').style.display = 'none';
           isShiftMode = false;
           checkedShiftIds.clear();
-          btnShiftToggle.classList.remove('active');
-          btnShiftToggle.textContent = '📋 Начать проверку смены';
+          document.getElementById('btnShiftToggle').classList.remove('active');
+          document.getElementById('btnShiftToggle').textContent = '📋 Начать проверку смены';
         }
       }
       renderCards();
     }
 
-    // Включение / перезапуск смены
-    btnShiftToggle.addEventListener('click', () => {
+    document.getElementById('btnShiftToggle').addEventListener('click', () => {
       isShiftMode = !isShiftMode;
       checkedShiftIds.clear();
 
       if (isShiftMode) {
-        btnShiftToggle.classList.add('active');
-        btnShiftToggle.textContent = '❌ Завершить проверку смены';
+        document.getElementById('btnShiftToggle').classList.add('active');
+        document.getElementById('btnShiftToggle').textContent = '❌ Завершить проверку смены';
       } else {
-        btnShiftToggle.classList.remove('active');
-        btnShiftToggle.textContent = '📋 Начать проверку смены';
+        document.getElementById('btnShiftToggle').classList.remove('active');
+        document.getElementById('btnShiftToggle').textContent = '📋 Начать проверку смены';
       }
       renderCards();
     });
 
-    // Генерация и копирование отчёта
-    btnGenerateReport.addEventListener('click', () => {
+    document.getElementById('btnGenerateReport').addEventListener('click', () => {
       const residualItems = items.filter(item => item.tags.includes("Остаток"));
-      
-      if (residualItems.length === 0) {
-        alert('Пока нет позиций с тегом "Остаток"!');
-        return;
-      }
+      if (residualItems.length === 0) return alert('Нет позиций с тегом "Остаток"!');
 
       const today = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
       let reportText = `☕ Отчёт по остаткам (${today}):\n────────────────────\n`;
@@ -273,26 +414,30 @@
 
       reportText += `────────────────────\nСмена сдана! ✨`;
 
-      reportTextarea.value = reportText;
-      reportPreviewBox.style.display = 'block';
+      const area = document.getElementById('reportTextarea');
+      area.value = reportText;
+      document.getElementById('reportPreviewBox').style.display = 'block';
 
-      // Копирование в буфер
       navigator.clipboard.writeText(reportText).then(() => {
-        alert('📋 Отчёт скопирован в буфер обмена! Можно вставлять в рабочий чат.');
-      }).catch(err => {
-        // Запасной вариант копирования
-        reportTextarea.select();
+        alert('📋 Отчёт скопирован в буфер обмена!');
+      }).catch(() => {
+        area.select();
         document.execCommand('copy');
         alert('📋 Отчёт скопирован!');
       });
     });
 
     async function fetchItems() {
-      cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Загрузка данных...</p>';
-      const { data, error } = await db.from('recipes').select('*').order('id', { ascending: false });
+      const cardsContainer = document.getElementById('cardsContainer');
+      cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Загрузка данных кофейни...</p>';
+      
+      const { data, error } = await db.from('recipes')
+        .select('*')
+        .eq('shop_id', currentUser.shop_id)
+        .order('id', { ascending: false });
+
       if (error) {
-        console.error('Ошибка загрузки:', error);
-        cardsContainer.innerHTML = '<p style="text-align:center; color:red;">Ошибка подключения к базе данных</p>';
+        cardsContainer.innerHTML = '<p style="text-align:center; color:red;">Ошибка базы данных</p>';
       } else {
         items = data || [];
         renderCards();
@@ -300,14 +445,13 @@
     }
 
     function renderCards() {
-      const query = searchInput.value.toLowerCase().trim();
+      const cardsContainer = document.getElementById('cardsContainer');
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
       cardsContainer.innerHTML = '';
 
       const filteredItems = items.filter(item => {
         const matchesSearch = item.title.toLowerCase().includes(query) || 
-                              item.recipe.toLowerCase().includes(query) ||
-                              (item.price && item.price.toLowerCase().includes(query)) ||
-                              (item.calories && item.calories.toLowerCase().includes(query));
+                              item.recipe.toLowerCase().includes(query);
         const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
         return matchesSearch && matchesTag;
       });
@@ -331,16 +475,32 @@
 
         const defaultImg = 'https://via.placeholder.com/150?text=No+Image';
         const isItemChecked = checkedShiftIds.has(item.id);
+        const isBarista = currentUser.role === 'barista';
+        const isResidualTag = item.tags.includes("Остаток");
 
-        card.innerHTML = `
-          <div class="card-actions">
+        // Управление доступом к кнопкам
+        let actionsHtml = '';
+        if (!isBarista) {
+          // Админ может всё
+          actionsHtml = `
             <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
-            ${isShiftMode && item.tags.includes("Остаток") ? 
-              `<button class="btn-check-item ${isItemChecked ? 'checked' : ''}" onclick="toggleCheckShift(${item.id})">
-                ${isItemChecked ? '✓ Проверено' : 'Чекнуть'}
-               </button>` : ''}
-          </div>
+          `;
+        } else if (isBarista && isResidualTag) {
+          // Бариста может только редактировать остаток
+          actionsHtml = `<button class="btn-edit" onclick="editItem(${item.id})">Изм. остаток</button>`;
+        }
+
+        if (isShiftMode && isResidualTag) {
+          actionsHtml += `
+            <button class="btn-check-item ${isItemChecked ? 'checked' : ''}" onclick="toggleCheckShift(${item.id})">
+              ${isItemChecked ? '✓ Проверено' : 'Чекнуть'}
+            </button>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="card-actions">${actionsHtml}</div>
           <div class="card-header">
             <div class="card-title">${escapeHtml(item.title)}</div>
             ${item.price ? `<div class="card-price">${escapeHtml(item.price)}</div>` : ''}
@@ -365,7 +525,6 @@
 
     function checkAutoCloseShift() {
       if (!isShiftMode) return;
-
       const residualItems = items.filter(item => item.tags.includes("Остаток"));
       if (residualItems.length === 0) return;
 
@@ -376,8 +535,8 @@
           alert('🎉 Все позиции смены успешно проверены!');
           isShiftMode = false;
           checkedShiftIds.clear();
-          btnShiftToggle.classList.remove('active');
-          btnShiftToggle.textContent = '📋 Начать проверку смены';
+          document.getElementById('btnShiftToggle').classList.remove('active');
+          document.getElementById('btnShiftToggle').textContent = '📋 Начать проверку смены';
           renderCards();
         }, 300);
       }
@@ -403,27 +562,49 @@
       document.getElementById('itemImg').value = item.img || '';
       document.getElementById('itemRecipe').value = item.recipe;
 
-      const checkboxes = tagCheckboxesContainer.querySelectorAll('input');
+      const checkboxes = document.getElementById('tagCheckboxes').querySelectorAll('input');
       checkboxes.forEach(cb => {
         cb.checked = item.tags.includes(cb.value);
       });
 
+      // Ограничения для бариста
+      if (currentUser.role === 'barista') {
+        document.getElementById('itemName').disabled = true;
+        document.getElementById('itemPrice').disabled = true;
+        document.getElementById('itemCalories').disabled = true;
+        document.getElementById('itemImg').disabled = true;
+      } else {
+        document.getElementById('itemName').disabled = false;
+        document.getElementById('itemPrice').disabled = false;
+        document.getElementById('itemCalories').disabled = false;
+        document.getElementById('itemImg').disabled = false;
+      }
+
+      document.getElementById('adminSection').style.display = 'block';
       document.getElementById('formTitle').textContent = 'Редактировать позицию';
       document.getElementById('btnSubmit').textContent = 'Сохранить изменения';
       document.getElementById('btnCancel').style.display = 'block';
-
       document.getElementById('adminSection').scrollIntoView({ behavior: 'smooth' });
     };
 
     function resetForm() {
-      addForm.reset();
+      document.getElementById('addForm').reset();
       document.getElementById('editItemId').value = '';
+      document.getElementById('itemName').disabled = false;
+      document.getElementById('itemPrice').disabled = false;
+      document.getElementById('itemCalories').disabled = false;
+      document.getElementById('itemImg').disabled = false;
+
+      if (currentUser.role === 'barista') {
+        document.getElementById('adminSection').style.display = 'none';
+      }
+
       document.getElementById('formTitle').textContent = 'Добавить позицию';
       document.getElementById('btnSubmit').textContent = 'Сохранить позицию';
       document.getElementById('btnCancel').style.display = 'none';
     }
 
-    addForm.addEventListener('submit', async (e) => {
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('editItemId').value;
       const title = document.getElementById('itemName').value;
@@ -431,7 +612,7 @@
       const calories = document.getElementById('itemCalories').value;
       const img = document.getElementById('itemImg').value;
       const recipe = document.getElementById('itemRecipe').value;
-      const checkedTags = Array.from(tagCheckboxesContainer.querySelectorAll('input:checked')).map(cb => cb.value);
+      const checkedTags = Array.from(document.getElementById('tagCheckboxes').querySelectorAll('input:checked')).map(cb => cb.value);
 
       const payload = {
         id: editId ? Number(editId) : Date.now(),
@@ -440,16 +621,15 @@
         calories,
         tags: checkedTags,
         img,
-        recipe
+        recipe,
+        shop_id: currentUser.shop_id
       };
 
       const { error } = await db.from('recipes').upsert(payload);
       if (error) {
-        alert('Ошибка при сохранении: ' + error.message);
+        alert('Ошибка сохранения: ' + error.message);
       } else {
-        if (editId && isShiftMode) {
-          checkedShiftIds.add(Number(editId));
-        }
+        if (editId && isShiftMode) checkedShiftIds.add(Number(editId));
         await fetchItems();
         resetForm();
       }
@@ -473,9 +653,8 @@
       });
     }
 
-    searchInput.addEventListener('input', renderCards);
-    initTags();
-    fetchItems();
+    document.getElementById('searchInput').addEventListener('input', renderCards);
+    loadShops();
   </script>
 </body>
 </html>
