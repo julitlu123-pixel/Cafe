@@ -237,6 +237,52 @@
           </div>
         </div>
       </div>
+
+      <!-- Список карточек меню -->
+      <div class="cards-scroll-container">
+        <div class="cards-list" id="cardsContainer"></div>
+      </div>
+
+      <!-- Форма создания/редактирования -->
+      <div class="admin-section" id="adminSection">
+        <h2 id="formTitle">Добавить позицию</h2>
+        <form id="addForm">
+          <input type="hidden" id="editItemId" value="">
+          
+          <div class="form-group">
+            <label for="itemName">Название:</label>
+            <input type="text" id="itemName" required placeholder="Например: Капучино 300мл">
+          </div>
+
+          <div class="form-group">
+            <label for="itemPrice">Цена:</label>
+            <input type="text" id="itemPrice" placeholder="Например: 190₽">
+          </div>
+
+          <div class="form-group">
+            <label for="itemCalories">Калорийность:</label>
+            <input type="text" id="itemCalories" placeholder="Например: 140 ккал">
+          </div>
+          
+          <div class="form-group">
+            <label>Теги:</label>
+            <div class="checkbox-tags" id="tagCheckboxes"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="itemImg">Ссылка на картинку (URL):</label>
+            <input type="url" id="itemImg" placeholder="https://example.com/image.jpg">
+          </div>
+
+          <div class="form-group">
+            <label for="itemRecipe">Состав / Техническая карта / Остаток:</label>
+            <textarea id="itemRecipe" required placeholder="Эспрессо: 30 мл&#10;Молоко: 220 мл"></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit" id="btnSubmit">Сохранить позицию</button>
+          <button type="button" class="btn-cancel" id="btnCancel" onclick="resetForm()">Отмена редактирования</button>
+        </form>
+      </div>
     </div>
 
     <!-- Раздел: Чеки и Касса -->
@@ -280,52 +326,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Карточки -->
-    <div class="cards-scroll-container">
-      <div class="cards-list" id="cardsContainer"></div>
-    </div>
-
-    <!-- Форма создания/редактирования -->
-    <div class="admin-section" id="adminSection">
-      <h2 id="formTitle">Добавить позицию</h2>
-      <form id="addForm">
-        <input type="hidden" id="editItemId" value="">
-        
-        <div class="form-group">
-          <label for="itemName">Название:</label>
-          <input type="text" id="itemName" required placeholder="Например: Капучино 300мл">
-        </div>
-
-        <div class="form-group">
-          <label for="itemPrice">Цена:</label>
-          <input type="text" id="itemPrice" placeholder="Например: 190₽">
-        </div>
-
-        <div class="form-group">
-          <label for="itemCalories">Калорийность:</label>
-          <input type="text" id="itemCalories" placeholder="Например: 140 ккал">
-        </div>
-        
-        <div class="form-group">
-          <label>Теги:</label>
-          <div class="checkbox-tags" id="tagCheckboxes"></div>
-        </div>
-
-        <div class="form-group">
-          <label for="itemImg">Ссылка на картинку (URL):</label>
-          <input type="url" id="itemImg" placeholder="https://example.com/image.jpg">
-        </div>
-
-        <div class="form-group">
-          <label for="itemRecipe">Состав / Техническая карта / Остаток:</label>
-          <textarea id="itemRecipe" required placeholder="Эспрессо: 30 мл&#10;Молоко: 220 мл"></textarea>
-        </div>
-
-        <button type="submit" class="btn-submit" id="btnSubmit">Сохранить позицию</button>
-        <button type="button" class="btn-cancel" id="btnCancel" onclick="resetForm()">Отмена редактирования</button>
-      </form>
-    </div>
   </div>
 
   <script>
@@ -343,7 +343,6 @@
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
-    let currentTab = 'search';
 
     function initTheme() {
       const savedTheme = localStorage.getItem('coffee_app_theme') || 'light';
@@ -365,7 +364,6 @@
     }
 
     function switchTab(tab) {
-      currentTab = tab;
       if (tab === 'search') {
         document.getElementById('tabSearchBtn').classList.add('active');
         document.getElementById('tabReceiptsBtn').classList.remove('active');
@@ -422,7 +420,6 @@
       document.getElementById('orderTotalSum').textContent = total;
     }
 
-    // Расчёт старта текущих суток смены (с 06:00 до 06:00)
     function getShiftStartTime() {
       const now = new Date();
       const shiftStart = new Date(now);
@@ -467,7 +464,6 @@
     async function fetchDailySales() {
       const shiftStart = getShiftStartTime();
       
-      // Вычисляем время за последние 7 дней для истории
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -484,7 +480,6 @@
 
       const salesList = data || [];
 
-      // 1. Считаем выручку ТЕКУЩЕЙ смены (после shiftStart)
       let cardSum = 0;
       let cashSum = 0;
 
@@ -502,7 +497,6 @@
       document.getElementById('totalCashSum').textContent = `${cashSum} ₽`;
       document.getElementById('totalDaySum').textContent = `${cardSum + cashSum} ₽`;
 
-      // 2. Выводим ИСТОРИЮ чеков за последние 7 дней
       const historyContainer = document.getElementById('historyListContainer');
       if (salesList.length === 0) {
         historyContainer.innerHTML = '<p style="text-align: center; color: #888;">За последние 7 дней чеков не найдено</p>';
