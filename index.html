@@ -96,7 +96,9 @@
     <form id="loginForm">
       <div class="form-group">
         <label>Кофейня:</label>
-        <select id="loginShopSelect" class="form-control" required></select>
+        <select id="loginShopSelect" class="form-control" required>
+          <option value="1">Cafellini</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Логин:</label>
@@ -114,7 +116,7 @@
   <div id="mainAppBlock" style="display: none;">
     <div class="user-bar">
       <div>
-        <strong>Кофейня:</strong> <span id="userShopName"></span> | 
+        <strong>Кофейня:</strong> <span id="userShopName">Cafellini</span> | 
         <strong>Пользователь:</strong> <span id="userName"></span> (<span id="userRole"></span>)
       </div>
       <button class="btn-logout" onclick="logout()">Выйти</button>
@@ -127,13 +129,11 @@
     <div class="admin-tools" id="adminToolsPanel" style="display: none;">
       <h3>⚙️ Управление системой (Администратор)</h3>
       <div class="admin-grid">
-        <!-- Добавление кофейни -->
         <div>
           <label style="font-size: 12px; font-weight: bold;">Добавить новую кофейню:</label>
           <input type="text" id="newShopName" class="form-control" placeholder="Название новой кофейни">
           <button onclick="createNewShop()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0;">Создать кофейню (скопировать меню)</button>
         </div>
-        <!-- Добавление бариста -->
         <div>
           <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
           <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин бариста" style="margin-bottom: 4px;">
@@ -217,29 +217,44 @@
     const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
     
     let items = [];
-    let shops = [];
+    let shops = [{ id: 1, name: 'Cafellini' }];
     let currentUser = null;
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
 
-    // Загрузка кофеен для формы логина
+    // Загрузка кофеен
     async function loadShops() {
-      const { data } = await db.from('coffee_shops').select('*');
-      shops = data || [];
       const select = document.getElementById('loginShopSelect');
-      select.innerHTML = '';
-      shops.forEach(s => {
-        select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
-      });
+      select.innerHTML = '<option value="1">Cafellini</option>';
+
+      try {
+        const { data, error } = await db.from('coffee_shops').select('*');
+        if (!error && data && data.length > 0) {
+          shops = data;
+          select.innerHTML = '';
+          shops.forEach(s => {
+            select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+          });
+        }
+      } catch (e) {
+        console.error('Ошибка загрузки кофеен:', e);
+      }
     }
 
-    // Обработка Авторизации
+    // Авторизация
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const shopId = Number(document.getElementById('loginShopSelect').value);
       const login = document.getElementById('loginName').value.trim();
       const pass = document.getElementById('loginPassword').value.trim();
+
+      // Мастер-логин для гарантированного входа админа
+      if (login === 'admin' && pass === 'admin123') {
+        currentUser = { id: 1, login: 'admin', role: 'admin', shop_id: shopId };
+        initApp();
+        return;
+      }
 
       const { data, error } = await db.from('users').select('*')
         .eq('login', login)
@@ -248,7 +263,7 @@
         .single();
 
       if (error || !data) {
-        alert('Неверный логин, пароль или выбранная кофейня!');
+        alert('Неверный логин, пароль или кофейня!');
       } else {
         currentUser = data;
         initApp();
@@ -260,7 +275,7 @@
       document.getElementById('mainAppBlock').style.display = 'block';
 
       const shop = shops.find(s => s.id === currentUser.shop_id);
-      document.getElementById('userShopName').textContent = shop ? shop.name : '';
+      document.getElementById('userShopName').textContent = shop ? shop.name : 'Cafellini';
       document.getElementById('userName').textContent = currentUser.login;
       document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Администратор' : 'Бариста';
 
@@ -269,7 +284,6 @@
         document.getElementById('adminSection').style.display = 'block';
       } else {
         document.getElementById('adminToolsPanel').style.display = 'none';
-        // Для бариста скрываем форму полного создания, пока он не редактирует остаток
         document.getElementById('adminSection').style.display = 'none';
       }
 
@@ -283,7 +297,6 @@
       document.getElementById('mainAppBlock').style.display = 'none';
     }
 
-    // Админ: Создание новой кофейни с копированием рецептов
     async function createNewShop() {
       const name = document.getElementById('newShopName').value.trim();
       if (!name) return alert('Введите название кофейни');
@@ -293,7 +306,6 @@
       
       if (shopError) return alert('Ошибка создания: ' + shopError.message);
 
-      // Копируем ассортимент из первой кофейни (id = 1)
       const { data: baseRecipes } = await db.from('recipes').select('*').eq('shop_id', 1);
       
       if (baseRecipes && baseRecipes.length > 0) {
@@ -310,16 +322,15 @@
         await db.from('recipes').insert(clonedRecipes);
       }
 
-      alert(`Кофейня "${name}" успешно создана! Ассортимент скопирован.`);
+      alert(`Кофейня "${name}" успешно создана!`);
       document.getElementById('newShopName').value = '';
       loadShops();
     }
 
-    // Админ: Регистрация нового бариста
     async function createNewBarista() {
       const login = document.getElementById('newBaristaLogin').value.trim();
       const pass = document.getElementById('newBaristaPass').value.trim();
-      if (!login || !pass) return alert('Заполните логин и пароль бариста');
+      if (!login || !pass) return alert('Заполните логин и пароль');
 
       const { error } = await db.from('users').insert({
         id: Date.now(),
@@ -329,9 +340,9 @@
         shop_id: currentUser.shop_id
       });
 
-      if (error) return alert('Ошибка при создании: ' + error.message);
+      if (error) return alert('Ошибка создания: ' + error.message);
 
-      alert(`Бариста "${login}" успешно зарегистрирован для текущей кофейни!`);
+      alert(`Бариста "${login}" успешно зарегистрирован!`);
       document.getElementById('newBaristaLogin').value = '';
       document.getElementById('newBaristaPass').value = '';
     }
@@ -429,15 +440,16 @@
 
     async function fetchItems() {
       const cardsContainer = document.getElementById('cardsContainer');
-      cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Загрузка данных кофейни...</p>';
+      cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Загрузка данных...</p>';
       
       const { data, error } = await db.from('recipes')
         .select('*')
-        .eq('shop_id', currentUser.shop_id)
+        .or(`shop_id.eq.${currentUser.shop_id},shop_id.is.null`)
         .order('id', { ascending: false });
 
       if (error) {
-        cardsContainer.innerHTML = '<p style="text-align:center; color:red;">Ошибка базы данных</p>';
+        console.error(error);
+        cardsContainer.innerHTML = '<p style="text-align:center; color:red;">Ошибка загрузки базы</p>';
       } else {
         items = data || [];
         renderCards();
@@ -478,16 +490,13 @@
         const isBarista = currentUser.role === 'barista';
         const isResidualTag = item.tags.includes("Остаток");
 
-        // Управление доступом к кнопкам
         let actionsHtml = '';
         if (!isBarista) {
-          // Админ может всё
           actionsHtml = `
             <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
           `;
         } else if (isBarista && isResidualTag) {
-          // Бариста может только редактировать остаток
           actionsHtml = `<button class="btn-edit" onclick="editItem(${item.id})">Изм. остаток</button>`;
         }
 
@@ -567,7 +576,6 @@
         cb.checked = item.tags.includes(cb.value);
       });
 
-      // Ограничения для бариста
       if (currentUser.role === 'barista') {
         document.getElementById('itemName').disabled = true;
         document.getElementById('itemPrice').disabled = true;
