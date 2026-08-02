@@ -115,6 +115,7 @@
     .history-item { background: var(--secondary-bg); padding: 10px; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
     .history-badge-card { background: #3498db; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
     .history-badge-cash { background: #2ecc71; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    .btn-delete-receipt { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
 
     /* КАРТОЧКИ */
     .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
@@ -461,6 +462,18 @@
       }
     }
 
+    // Удаление ошибочного чека
+    window.deleteReceipt = async function(id) {
+      if (!confirm("Удалить этот чек из истории? Сумма с пишется с кассы.")) return;
+
+      const { error } = await db.from('sales').delete().eq('id', id);
+      if (error) {
+        alert('Ошибка при удалении чека: ' + error.message);
+      } else {
+        fetchDailySales(); // Обновляем кассу и историю
+      }
+    };
+
     async function fetchDailySales() {
       const shiftStart = getShiftStartTime();
       
@@ -516,8 +529,9 @@
               <strong>${sale.amount} ₽</strong> — <span class="${isCard ? 'history-badge-card' : 'history-badge-cash'}">${isCard ? 'Карта' : 'Наличные'}</span>
               <div style="font-size: 11px; color: var(--secondary-text); margin-top: 2px;">${escapeHtml(sale.items_summary || 'Без состава')}</div>
             </div>
-            <div style="font-size: 12px; color: var(--secondary-text); text-align: right;">
-              ${dateStr}<br>${timeStr}
+            <div style="font-size: 12px; color: var(--secondary-text); text-align: right; display: flex; align-items: center;">
+              <span>${dateStr}<br>${timeStr}</span>
+              <button class="btn-delete-receipt" onclick="deleteReceipt(${sale.id})">🗑️</button>
             </div>
           </div>
         `;
