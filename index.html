@@ -165,7 +165,7 @@
     /* ТЕГИ: ПО УМОЛЧАНИЮ В НЕСКОЛЬКО СТРОК */
     .tags-filter { 
       display: flex; 
-      flex-wrap: wrap; /* По умолчанию теги в куче */
+      flex-wrap: wrap; 
       gap: 8px; 
       margin-bottom: 10px; 
     }
@@ -273,6 +273,7 @@
     
     .card-actions { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; width: 75px; }
     .btn-add-cart { background: #e67e22; color: white; border: none; border-radius: 4px; padding: 4px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; }
+    .btn-copy { background: #d35400; color: white; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; }
     .btn-edit { background: var(--accent-color); color: white; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer; font-size: 11px; text-align: center; }
     .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer; font-size: 11px; text-align: center; }
     .btn-check-item { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 4px 5px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; margin-top: 2px; }
@@ -426,6 +427,7 @@
         <h2 id="formTitle">Добавить позицию</h2>
         <form id="addForm">
           <input type="hidden" id="editItemId" value="">
+          <input type="hidden" id="isCopyAction" value="0">
           
           <div class="form-group">
             <label for="itemName">Название:</label>
@@ -536,7 +538,7 @@
       auth: { persistSession: false }
     });
 
-    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Десерты", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
+    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Десерты", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Выставленное", "Смена", "Остаток"];
     
     let items = [];
     let cart = [];
@@ -1415,16 +1417,21 @@
         const isItemChecked = checkedShiftIds.has(item.id);
         const isBarista = currentUser.role === 'barista';
         const isResidualTag = item.tags.includes("Остаток");
+        const isExhibitedTag = item.tags.includes("Выставленное");
 
         let actionsHtml = `<button class="btn-add-cart" onclick="addToCartById(${item.id})">+ В чек</button>`;
+
+        if (isBarista) {
+          actionsHtml += `<button class="btn-copy" onclick="makeCopyItem(${item.id})">📋 Копия</button>`;
+        }
 
         if (!isBarista) {
           actionsHtml += `
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
             <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
           `;
-        } else if (isBarista && isResidualTag) {
-          actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">Изм. остаток</button>`;
+        } else if (isBarista && (isResidualTag || isExhibitedTag)) {
+          actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">Изм. сроки</button>`;
         }
 
         if (isShiftMode && isResidualTag) {
@@ -1490,11 +1497,53 @@
       renderCards();
     };
 
+    // СОЗДАНИЕ КОПИИ БАРИСТА С ПРИСВОЕНИЕМ ТЕГА "Выставленное"
+    window.makeCopyItem = function(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('editItemId').value = ''; // Новая запись
+      document.getElementById('isCopyAction').value = '1';
+      document.getElementById('itemName').value = item.title;
+      document.getElementById('itemPrice').value = item.price || '';
+      document.getElementById('itemCalories').value = item.calories || '';
+      
+      // Автоматом ставим сегодня в дату изготовления
+      const todayIso = new Date().toISOString().split('T')[0];
+      document.getElementById('itemMadeDate').value = todayIso;
+      document.getElementById('itemShelfDays').value = item.shelf_days || '';
+      
+      document.getElementById('itemImg').value = item.img || '';
+      document.getElementById('itemRecipe').value = item.recipe;
+
+      const checkboxes = document.getElementById('tagCheckboxes').querySelectorAll('input');
+      checkboxes.forEach(cb => {
+        if (cb.value === "Выставленное") {
+          cb.checked = true; // Обязательный тег
+        } else {
+          cb.checked = item.tags.includes(cb.value);
+        }
+      });
+
+      // Бариста не меняют баз. информацию, только даты и остатки
+      document.getElementById('itemName').disabled = true;
+      document.getElementById('itemPrice').disabled = true;
+      document.getElementById('itemCalories').disabled = true;
+      document.getElementById('itemImg').disabled = true;
+
+      document.getElementById('adminSection').style.display = 'block';
+      document.getElementById('formTitle').textContent = 'Выставить позицию на витрину';
+      document.getElementById('btnSubmit').textContent = 'Сохранить выставленное';
+      document.getElementById('btnCancel').style.display = 'block';
+      document.getElementById('adminSection').scrollIntoView({ behavior: 'smooth' });
+    };
+
     window.editItem = function(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
       document.getElementById('editItemId').value = item.id;
+      document.getElementById('isCopyAction').value = '0';
       document.getElementById('itemName').value = item.title;
       document.getElementById('itemPrice').value = item.price || '';
       document.getElementById('itemCalories').value = item.calories || '';
@@ -1508,7 +1557,10 @@
         cb.checked = item.tags.includes(cb.value);
       });
 
-      if (currentUser.role === 'barista') {
+      const isBarista = currentUser.role === 'barista';
+      const isExhibited = item.tags.includes("Выставленное");
+
+      if (isBarista && !isExhibited) {
         document.getElementById('itemName').disabled = true;
         document.getElementById('itemPrice').disabled = true;
         document.getElementById('itemCalories').disabled = true;
@@ -1530,6 +1582,7 @@
     function resetForm() {
       document.getElementById('addForm').reset();
       document.getElementById('editItemId').value = '';
+      document.getElementById('isCopyAction').value = '0';
       document.getElementById('itemName').disabled = false;
       document.getElementById('itemPrice').disabled = false;
       document.getElementById('itemCalories').disabled = false;
@@ -1547,6 +1600,7 @@
     document.getElementById('addForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('editItemId').value;
+      const isCopy = document.getElementById('isCopyAction').value === '1';
       const title = document.getElementById('itemName').value;
       const price = document.getElementById('itemPrice').value;
       const calories = document.getElementById('itemCalories').value;
@@ -1554,12 +1608,17 @@
       const shelf_days = document.getElementById('itemShelfDays').value;
       const img = document.getElementById('itemImg').value;
       const recipe = document.getElementById('itemRecipe').value;
-      const checkedTags = Array.from(document.getElementById('tagCheckboxes').querySelectorAll('input:checked')).map(cb => cb.value);
+      
+      let checkedTags = Array.from(document.getElementById('tagCheckboxes').querySelectorAll('input:checked')).map(cb => cb.value);
+
+      if (isCopy && !checkedTags.includes("Выставленное")) {
+        checkedTags.push("Выставленное");
+      }
 
       setStatus('⏳ Сохраняем...');
 
       const payload = {
-        id: editId ? Number(editId) : Date.now(),
+        id: (editId && !isCopy) ? Number(editId) : Date.now(),
         title,
         price,
         calories,
