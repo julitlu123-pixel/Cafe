@@ -14,50 +14,43 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #eef2f5 0%, #e0e8ed 50%, #f4f6f8 100%);
-      --card-bg: rgba(255, 255, 255, 0.9);
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
       --text-color: #333333;
       --heading-color: #2c3e50;
       --border-color: #e0e0e0;
       --secondary-bg: #eef2f5;
       --secondary-text: #555555;
       --input-bg: #ffffff;
+      --accent-color: #3498db;
       --shadow: rgba(0,0,0,0.08);
       --card-shadow: rgba(0,0,0,0.06);
     }
 
     [data-theme="dark"] {
-      --bg-gradient: linear-gradient(135deg, #181623 0%, #20182e 50%, #151d28 100%);
-      --card-bg: rgba(42, 52, 61, 0.85);
-      --text-color: #e1e6eb;
-      --heading-color: #f0f4f8;
-      --border-color: #3a4754;
-      --secondary-bg: rgba(52, 64, 76, 0.7);
-      --secondary-text: #b0bec5;
-      --input-bg: #242c34;
-      --shadow: rgba(0,0,0,0.3);
-      --card-shadow: rgba(0,0,0,0.25);
+      --bg-color: #121019; /* Глубокий холодный темный фон по скрину */
+      --card-bg: #1d1927; /* Холодная фиолетово-темная карточка */
+      --text-color: #e3e1f0;
+      --heading-color: #f1effc;
+      --border-color: #2f2a3e;
+      --secondary-bg: #272235;
+      --secondary-text: #a19bb8;
+      --input-bg: #171421;
+      --accent-color: #4a3f8c; /* Холодный индиго/фиолетовый с плашки */
+      --shadow: rgba(0,0,0,0.4);
+      --card-shadow: rgba(0,0,0,0.3);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     
     body { 
-      background: var(--bg-gradient);
-      background-size: 200% 200%;
-      animation: ambientGlow 14s ease infinite;
+      background-color: var(--bg-color);
       color: var(--text-color); 
       padding: 15px; 
       max-width: 800px; 
       margin: 0 auto;
       min-height: 100vh;
-      transition: color 0.25s;
-    }
-
-    /* Мягкая и супер-легкая анимация фона */
-    @keyframes ambientGlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      transition: background-color 0.2s, color 0.2s;
     }
     
     h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
@@ -76,25 +69,24 @@
       font-size: 14px;
       font-weight: bold;
       z-index: 999;
-      backdrop-filter: blur(8px);
       box-shadow: 0 2px 6px var(--shadow);
     }
 
     /* ВКЛАДКИ НАВИГАЦИИ */
     .app-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-    .tab-btn { flex: 1; padding: 12px; border: none; background: var(--secondary-bg); color: var(--secondary-text); font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; text-align: center; backdrop-filter: blur(5px); }
-    .tab-btn.active { background: #3498db; color: white; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: var(--secondary-bg); color: var(--secondary-text); font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; text-align: center; }
+    .tab-btn.active { background: var(--accent-color); color: white; }
 
     /* ЭКРАН ЛОГИНА */
-    .login-container { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow); max-width: 400px; margin: 40px auto; backdrop-filter: blur(10px); }
+    .login-container { background: var(--card-bg); padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px var(--shadow); max-width: 400px; margin: 40px auto; border: 1px solid var(--border-color); }
     .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
 
     /* ШАПКА ПОЛЬЗОВАТЕЛЯ */
-    .user-bar { background: var(--secondary-bg); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; backdrop-filter: blur(5px); }
+    .user-bar { background: var(--secondary-bg); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; border: 1px solid var(--border-color); }
     .btn-logout { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 
     /* ПАНЕЛЬ АДМИНИСТРАТОРА */
-    .admin-tools { background: var(--card-bg); border: 1px solid #27ae60; padding: 15px; border-radius: 12px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+    .admin-tools { background: var(--card-bg); border: 1px solid #27ae60; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
     .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 600px) { .admin-grid { grid-template-columns: 1fr; } }
 
@@ -102,17 +94,17 @@
     .barista-item { display: flex; justify-content: space-between; align-items: center; background: var(--secondary-bg); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
 
     /* СЕКЦИЯ ПОИСКА И ТЕГОВ */
-    .search-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 20px; backdrop-filter: blur(10px); }
+    .search-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 20px; border: 1px solid var(--border-color); }
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
     .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: var(--secondary-bg); color: var(--secondary-text); cursor: pointer; font-size: 14px; font-weight: 500; }
-    .tag-btn.active { background: #3498db; color: white; }
+    .tag-btn.active { background: var(--accent-color); color: white; }
 
     .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
     .shift-actions { display: flex; flex-direction: column; gap: 8px; }
-    .btn-shift { width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .btn-shift { width: 100%; background: var(--accent-color); color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .btn-shift.active { background: #e74c3c; }
     .btn-report { width: 100%; background: #27ae60; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
 
@@ -129,7 +121,7 @@
       position: relative;
       touch-action: pan-y;
       user-select: none;
-      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
     }
     .swipe-hint { font-size: 11px; color: var(--secondary-text); text-align: center; margin-bottom: 8px; }
     .order-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; max-height: 200px; overflow-y: auto; }
@@ -142,24 +134,24 @@
     .order-total .old-price { text-decoration: line-through; color: #888; font-size: 14px; margin-right: 6px; }
 
     .payment-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn-pay-card { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .btn-pay-card { background: var(--accent-color); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
     .btn-pay-cash { background: #2ecc71; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
 
-    .cash-summary-box { background: var(--secondary-bg); padding: 15px; border-radius: 12px; margin-top: 20px; backdrop-filter: blur(5px); }
+    .cash-summary-box { background: var(--secondary-bg); padding: 15px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border-color); }
     .summary-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: bold; margin-bottom: 6px; }
 
     /* ИСТОРИЯ ЧЕКОВ */
-    .history-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-top: 20px; backdrop-filter: blur(10px); }
+    .history-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-top: 20px; border: 1px solid var(--border-color); }
     .history-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; margin-top: 10px; }
     .history-item { background: var(--secondary-bg); padding: 10px; border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-    .history-badge-card { background: #3498db; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+    .history-badge-card { background: var(--accent-color); color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
     .history-badge-cash { background: #2ecc71; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
     .btn-delete-receipt { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
 
     /* КАРТОЧКИ */
     .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
     .cards-list { display: grid; gap: 15px; }
-    .card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px var(--card-shadow); display: flex; flex-direction: column; gap: 10px; position: relative; border: 2px solid transparent; backdrop-filter: blur(10px); }
+    .card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px var(--card-shadow); display: flex; flex-direction: column; gap: 10px; position: relative; border: 1px solid var(--border-color); }
     
     .card.shift-uncheck { border-color: #e74c3c !important; background-color: rgba(231, 76, 60, 0.12) !important; }
     .card.shift-checked { border-color: #2ecc71 !important; background-color: rgba(46, 204, 113, 0.12) !important; }
@@ -178,13 +170,13 @@
     
     .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 80px; }
     .btn-add-cart { background: #e67e22; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: center; }
-    .btn-edit { background: #3498db; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
+    .btn-edit { background: var(--accent-color); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
     .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
     .btn-check-item { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 5px 6px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; margin-top: 2px; }
     .btn-check-item.checked { background: #2ecc71; }
 
     /* ФОРМА ДОБАВЛЕНИЯ */
-    .admin-section { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 25px; backdrop-filter: blur(10px); }
+    .admin-section { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 25px; border: 1px solid var(--border-color); }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; color: var(--heading-color); }
     .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; font-size: 14px; }
@@ -260,7 +252,7 @@
             <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
             <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин" style="margin-bottom: 4px;">
             <input type="password" id="newBaristaPass" class="form-control" placeholder="Пароль" style="margin-bottom: 4px;">
-            <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: #3498db;">Зарегистрировать</button>
+            <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: var(--accent-color);">Зарегистрировать</button>
           </div>
         </div>
 
@@ -368,7 +360,7 @@
         <div style="font-size: 12px; color: #888; text-align: center; margin-bottom: 10px;">Автосброс смены происходит ежедневно в 06:00 утра</div>
         <div class="summary-row">
           <span>💳 Принято картой:</span>
-          <span style="color: #3498db;" id="totalCardSum">0 ₽</span>
+          <span style="color: #6a85e5;" id="totalCardSum">0 ₽</span>
         </div>
         <div class="summary-row">
           <span>💵 Принято наличными:</span>
@@ -420,7 +412,7 @@
     }
 
     function initTheme() {
-      const savedTheme = localStorage.getItem('coffee_app_theme') || 'light';
+      const savedTheme = localStorage.getItem('coffee_app_theme') || 'dark'; // По умолчанию темная холодная тема
       document.documentElement.setAttribute('data-theme', savedTheme);
       updateThemeBtnText(savedTheme);
     }
@@ -865,7 +857,6 @@
       loadShops();
     }
 
-    // ПЕРЕИМЕНОВАНИЕ ТЕКУЩЕЙ КОФЕЙНИ
     async function renameCurrentShop() {
       if (!currentUser || currentUser.role !== 'admin') return alert('Только администратор может переименовывать точки');
 
@@ -916,7 +907,6 @@
       }
     }
 
-    // ПОЛУЧЕНИЕ И УПРАВЛЕНИЕ БАРИСТА
     async function fetchBaristaAccounts() {
       const container = document.getElementById('baristaAccountsContainer');
       if (!container) return;
@@ -942,7 +932,7 @@
           <div class="barista-item">
             <span>👤 <strong>${escapeHtml(user.login)}</strong></span>
             <div>
-              <button onclick="editBarista(${user.id}, '${escapeHtml(user.login)}')" style="background:#3498db; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">✏️ Изменить</button>
+              <button onclick="editBarista(${user.id}, '${escapeHtml(user.login)}')" style="background:var(--accent-color); color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">✏️ Изменить</button>
               <button onclick="deleteBarista(${user.id}, '${escapeHtml(user.login)}')" style="background:#e74c3c; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px; margin-left:4px;">🗑️</button>
             </div>
           </div>
