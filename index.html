@@ -39,7 +39,6 @@
       --card-shadow: rgba(0,0,0,0.25);
     }
 
-    /* Убрали универсальную анимацию со всех элементов *, чтобы ввода не лагал */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     
     body { 
@@ -90,7 +89,8 @@
 
     /* СЕКЦИЯ ПОИСКА И ТЕГОВ */
     .search-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 20px; }
-    .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 12px; outline: none; }
+    .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
+    .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
     .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
     .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: var(--secondary-bg); color: var(--secondary-text); cursor: pointer; font-size: 14px; font-weight: 500; }
@@ -232,7 +232,8 @@
       </div>
 
       <div class="search-box">
-        <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию...">
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск (например: сироп -орехи)...">
+        <div class="search-hint">💡 Испольуйте <strong>-слово</strong> чтобы исключить аллергены или ингредиенты (например: <code>-орехи</code>)</div>
         <div class="tags-filter" id="tagsFilter"></div>
         
         <div class="shift-panel" id="shiftPanel">
@@ -261,7 +262,7 @@
           
           <div class="form-group">
             <label for="itemName">Название:</label>
-            <input type="text" id="itemName" required placeholder="Например: Капучино 300мл">
+            <input type="text" id="itemName" required placeholder="Например: Круассан с ветчиной">
           </div>
 
           <div class="form-group">
@@ -271,7 +272,7 @@
 
           <div class="form-group">
             <label for="itemCalories">Калорийность:</label>
-            <input type="text" id="itemCalories" placeholder="Например: 140 ккал">
+            <input type="text" id="itemCalories" placeholder="Например: 240 ккал">
           </div>
           
           <div class="form-group">
@@ -344,7 +345,8 @@
 
     const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
+    // Добавлены новые теги: "Выпечка", "Вегетарианское", "Мясное"
+    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
     
     let items = [];
     let cart = [];
@@ -802,13 +804,29 @@
 
     function renderCards() {
       const cardsContainer = document.getElementById('cardsContainer');
-      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const rawQuery = document.getElementById('searchInput').value.toLowerCase().trim();
       cardsContainer.innerHTML = '';
 
+      // Разбираем поисковый запрос на обычные слова и минус-слова
+      const tokens = rawQuery.split(/\s+/).filter(t => t.length > 0);
+      const includeWords = tokens.filter(t => !t.startsWith('-'));
+      const excludeWords = tokens.filter(t => t.startsWith('-') && t.length > 1).map(t => t.slice(1));
+
       const filteredItems = items.filter(item => {
-        const matchesSearch = item.title.toLowerCase().includes(query) || 
-                              item.recipe.toLowerCase().includes(query);
+        const titleLower = item.title.toLowerCase();
+        const recipeLower = item.recipe.toLowerCase();
+        const combinedText = titleLower + ' ' + recipeLower;
+
+        // 1. ПРОВЕРКА МИНУС-СЛОВ (Исключения): если в тексте есть хоть одно минус-слово — скрываем карточку
+        const hasExcludedWord = excludeWords.some(exWord => combinedText.includes(exWord));
+        if (hasExcludedWord) return false;
+
+        // 2. ПРОВЕРКА ОБЫЧНЫХ СЛОВ: все обычные слова должны присутствовать в тексте
+        const matchesSearch = includeWords.every(incWord => combinedText.includes(incWord));
+
+        // 3. ПРОВЕРКА ТЕГА
         const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+
         return matchesSearch && matchesTag;
       });
 
