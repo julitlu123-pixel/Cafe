@@ -26,7 +26,6 @@
       --shadow: rgba(0,0,0,0.08);
       --card-shadow: rgba(0,0,0,0.06);
       
-      /* Переменные для компактности и шрифта */
       --main-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --card-padding: 15px;
       --card-gap: 10px;
@@ -76,6 +75,16 @@
     }
     
     h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
+
+    /* АВТОМАТИЧЕСКОЕ СКРЫТИЕ ШАПКИ ПРИ АКТИВНОМ ПОИСКЕ */
+    body.search-focused .top-settings-bar,
+    body.search-focused .user-bar,
+    body.search-focused .app-tabs,
+    body.search-focused .status-badge,
+    body.search-focused .timer-widget,
+    body.search-focused .admin-tools {
+      display: none !important;
+    }
     
     /* ПАНЕЛЬ НАСТРОЕК ВНЕДРЕНИЯ (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) */
     .top-settings-bar {
@@ -153,8 +162,32 @@
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
-    .tags-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-    .tag-btn { border: none; padding: 6px 12px; border-radius: 20px; background: var(--secondary-bg); color: var(--secondary-text); cursor: pointer; font-size: 14px; font-weight: 500; }
+    /* ТЕГИ: ОДНА СТРОКА С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ */
+    .tags-filter { 
+      display: flex; 
+      flex-wrap: nowrap; 
+      gap: 8px; 
+      margin-bottom: 10px; 
+      overflow-x: auto; 
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .tags-filter::-webkit-scrollbar { height: 4px; }
+    .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+    .tag-btn { 
+      border: none; 
+      padding: 6px 12px; 
+      border-radius: 20px; 
+      background: var(--secondary-bg); 
+      color: var(--secondary-text); 
+      cursor: pointer; 
+      font-size: 13px; 
+      font-weight: 500; 
+      white-space: nowrap; 
+      flex-shrink: 0;
+    }
     .tag-btn.active { background: var(--accent-color); color: white; }
 
     .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
@@ -509,6 +542,20 @@
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
+
+    // ОБРАБОТКА СКРЫТИЯ ВЕРХНИХ БЛОКОВ ПРИ ВВОДЕ В ПОИСК
+    function initSearchFocusHandlers() {
+      const searchInput = document.getElementById('searchInput');
+      if (!searchInput) return;
+
+      searchInput.addEventListener('focus', () => {
+        document.body.classList.add('search-focused');
+      });
+
+      searchInput.addEventListener('blur', () => {
+        document.body.classList.remove('search-focused');
+      });
+    }
 
     // НАСТРОЙКА КОМПАКТНОСТИ И ШРИФТОВ
     function changeDensity(val) {
@@ -999,6 +1046,7 @@
 
       initTags();
       initSwipeDiscount();
+      initSearchFocusHandlers();
       fetchItems();
     }
 
