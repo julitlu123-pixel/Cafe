@@ -25,23 +25,45 @@
       --accent-color: #3498db;
       --shadow: rgba(0,0,0,0.08);
       --card-shadow: rgba(0,0,0,0.06);
+      
+      /* Переменные для компактности и шрифта */
+      --main-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --card-padding: 15px;
+      --card-gap: 10px;
+      --title-size: 18px;
+      --img-size: 90px;
     }
 
     [data-theme="dark"] {
-      --bg-color: #121019; /* Глубокий холодный темный фон по скрину */
-      --card-bg: #1d1927; /* Холодная фиолетово-темная карточка */
+      --bg-color: #121019;
+      --card-bg: #1d1927;
       --text-color: #e3e1f0;
       --heading-color: #f1effc;
       --border-color: #2f2a3e;
       --secondary-bg: #272235;
       --secondary-text: #a19bb8;
       --input-bg: #171421;
-      --accent-color: #4a3f8c; /* Холодный индиго/фиолетовый с плашки */
+      --accent-color: #4a3f8c;
       --shadow: rgba(0,0,0,0.4);
       --card-shadow: rgba(0,0,0,0.3);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    /* РЕЖИМЫ КОМПАКТНОСТИ ОКОШЕК */
+    [data-density="compact"] {
+      --card-padding: 10px;
+      --card-gap: 6px;
+      --title-size: 15px;
+      --img-size: 65px;
+    }
+
+    [data-density="dense"] {
+      --card-padding: 6px 8px;
+      --card-gap: 4px;
+      --title-size: 14px;
+      --img-size: 45px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--main-font); }
     
     body { 
       background-color: var(--bg-color);
@@ -55,22 +77,55 @@
     
     h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
     
-    /* КНОПКА ТЕМЫ */
-    .theme-toggle-btn {
-      position: fixed;
-      top: 12px;
-      right: 12px;
+    /* ПАНЕЛЬ НАСТРОЕК ВНЕДРЕНИЯ (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) */
+    .top-settings-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .setting-select, .theme-toggle-btn {
       background: var(--secondary-bg);
       color: var(--text-color);
       border: 1px solid var(--border-color);
-      padding: 6px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 14px;
+      padding: 5px 10px;
+      border-radius: 16px;
+      font-size: 12px;
       font-weight: bold;
-      z-index: 999;
-      box-shadow: 0 2px 6px var(--shadow);
+      cursor: pointer;
+      outline: none;
     }
+
+    /* ТАЙМЕР ПРОЛИВА */
+    .timer-widget {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    .timer-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .timer-display { font-size: 26px; font-weight: bold; font-family: monospace; color: var(--accent-color); text-align: center; margin: 8px 0; }
+    .timer-controls { display: flex; gap: 8px; justify-content: center; }
+    .btn-timer { border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; color: white; }
+    .btn-timer-start { background: #2ecc71; }
+    .btn-timer-pause { background: #f39c12; }
+    .btn-timer-reset { background: #e74c3c; }
+
+    /* СРОК ГОДНОСТИ СТАТУСЫ */
+    .expiry-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-top: 2px;
+      display: inline-block;
+    }
+    .expiry-green { background: rgba(46, 204, 113, 0.18); color: #2ecc71; border: 1px solid #2ecc71; }
+    .expiry-yellow { background: rgba(241, 196, 15, 0.22); color: #f39c12; border: 1px solid #f39c12; }
+    .expiry-red { background: rgba(231, 76, 60, 0.22); color: #e74c3c; border: 1px solid #e74c3c; }
 
     /* ВКЛАДКИ НАВИГАЦИИ */
     .app-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -148,31 +203,41 @@
     .history-badge-cash { background: #2ecc71; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
     .btn-delete-receipt { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
 
-    /* КАРТОЧКИ */
+    /* КАРТОЧКИ С НАСТРОЙКОЙ КОМПАКТНОСТИ */
     .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
-    .cards-list { display: grid; gap: 15px; }
-    .card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px var(--card-shadow); display: flex; flex-direction: column; gap: 10px; position: relative; border: 1px solid var(--border-color); }
+    .cards-list { display: grid; gap: var(--card-gap); }
+    .card { 
+      background: var(--card-bg); 
+      border-radius: 12px; 
+      padding: var(--card-padding); 
+      box-shadow: 0 2px 8px var(--card-shadow); 
+      display: flex; 
+      flex-direction: column; 
+      gap: var(--card-gap); 
+      position: relative; 
+      border: 1px solid var(--border-color); 
+    }
     
     .card.shift-uncheck { border-color: #e74c3c !important; background-color: rgba(231, 76, 60, 0.12) !important; }
     .card.shift-checked { border-color: #2ecc71 !important; background-color: rgba(46, 204, 113, 0.12) !important; }
 
-    .card-header { border-bottom: 1px solid var(--border-color); padding-bottom: 8px; padding-right: 85px; min-height: 38px; }
-    .card-title { font-size: 18px; font-weight: bold; color: var(--heading-color); }
-    .card-price { font-size: 15px; font-weight: bold; color: #2ecc71; margin-top: 2px; }
-    .card-calories { font-size: 13px; color: var(--secondary-text); margin-top: 1px; }
+    .card-header { border-bottom: 1px solid var(--border-color); padding-bottom: 6px; padding-right: 85px; min-height: 32px; }
+    .card-title { font-size: var(--title-size); font-weight: bold; color: var(--heading-color); }
+    .card-price { font-size: 14px; font-weight: bold; color: #2ecc71; margin-top: 2px; }
+    .card-calories { font-size: 12px; color: var(--secondary-text); margin-top: 1px; }
 
-    .card-tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .card-tag { background: var(--secondary-bg); color: var(--secondary-text); font-size: 12px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .card-tag { background: var(--secondary-bg); color: var(--secondary-text); font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
     
-    .card-body { display: flex; gap: 15px; }
-    .card-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; background: var(--secondary-bg); flex-shrink: 0; }
-    .card-content { flex-grow: 1; font-size: 14px; line-height: 1.4; white-space: pre-line; color: var(--text-color); }
+    .card-body { display: flex; gap: 10px; }
+    .card-img { width: var(--img-size); height: var(--img-size); object-fit: cover; border-radius: 6px; background: var(--secondary-bg); flex-shrink: 0; }
+    .card-content { flex-grow: 1; font-size: 13px; line-height: 1.35; white-space: pre-line; color: var(--text-color); }
     
-    .card-actions { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 5px; width: 80px; }
-    .btn-add-cart { background: #e67e22; color: white; border: none; border-radius: 4px; padding: 5px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: center; }
-    .btn-edit { background: var(--accent-color); color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
-    .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; text-align: center; }
-    .btn-check-item { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 5px 6px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; margin-top: 2px; }
+    .card-actions { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; width: 75px; }
+    .btn-add-cart { background: #e67e22; color: white; border: none; border-radius: 4px; padding: 4px; cursor: pointer; font-size: 11px; font-weight: bold; text-align: center; }
+    .btn-edit { background: var(--accent-color); color: white; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer; font-size: 11px; text-align: center; }
+    .btn-delete { background: #ff4d4d; color: white; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer; font-size: 11px; text-align: center; }
+    .btn-check-item { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 4px 5px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; margin-top: 2px; }
     .btn-check-item.checked { background: #2ecc71; }
 
     /* ФОРМА ДОБАВЛЕНИЯ */
@@ -191,8 +256,23 @@
 </head>
 <body>
 
-  <!-- Кнопка темы -->
-  <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙 Тёмная</button>
+  <!-- ВЕРХНЯЯ ПАНЕЛЬ НАСТРОЕК (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) -->
+  <div class="top-settings-bar">
+    <select id="densitySelect" class="setting-select" onchange="changeDensity(this.value)">
+      <option value="normal">📐 Стандартный размер</option>
+      <option value="compact">📱 Компактный (для тел.)</option>
+      <option value="dense">🔍 Плотный список</option>
+    </select>
+
+    <select id="fontSelect" class="setting-select" onchange="changeFont(this.value)">
+      <option value="system">🔤 Шрифты: Системный</option>
+      <option value="rounded">🔤 Шрифты: Rounded</option>
+      <option value="mono">🔤 Шрифты: Monospace</option>
+      <option value="serif">🔤 Шрифты: Serif</option>
+    </select>
+
+    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" style="position: static;">🌙 Тёмная</button>
+  </div>
 
   <!-- Окно Логина -->
   <div class="login-container" id="loginBlock">
@@ -233,6 +313,22 @@
     </div>
 
     <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
+
+    <!-- ТАЙМЕР ПРОЛИВА (ЭСПРЕССО) -->
+    <div class="timer-widget">
+      <div class="timer-header" onclick="toggleTimerBody()">
+        <strong>⏱️ Таймер пролива группы</strong>
+        <span id="timerFoldIcon">▼</span>
+      </div>
+      <div id="timerBody" style="display: none; margin-top: 10px;">
+        <div class="timer-display" id="timerText">00:00.0</div>
+        <div class="timer-controls">
+          <button class="btn-timer btn-timer-start" id="btnTimerStart" onclick="startTimer()">▶ Старт</button>
+          <button class="btn-timer btn-timer-pause" id="btnTimerPause" onclick="pauseTimer()">⏸ Пауза</button>
+          <button class="btn-timer btn-timer-reset" onclick="resetTimer()">🔄 Сброс</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Раздел: Поиск и Меню -->
     <div id="tabSearchSection">
@@ -306,6 +402,17 @@
           <div class="form-group">
             <label for="itemCalories">Калорийность:</label>
             <input type="text" id="itemCalories" placeholder="Например: 240 ккал">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label for="itemMadeDate">Дата изготовления/вскрытия:</label>
+              <input type="date" id="itemMadeDate" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="itemShelfDays">Срок годности (в днях):</label>
+              <input type="number" id="itemShelfDays" placeholder="Например: 3" class="form-control">
+            </div>
           </div>
           
           <div class="form-group">
@@ -403,6 +510,82 @@
     let isShiftMode = false;
     let checkedShiftIds = new Set();
 
+    // НАСТРОЙКА КОМПАКТНОСТИ И ШРИФТОВ
+    function changeDensity(val) {
+      document.documentElement.setAttribute('data-density', val);
+      localStorage.setItem('coffee_app_density', val);
+    }
+
+    function changeFont(val) {
+      let fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      if (val === 'rounded') fontFamily = '"Comic Sans MS", "Arial Rounded MT Bold", sans-serif';
+      if (val === 'mono') fontFamily = 'Consolas, Monaco, monospace';
+      if (val === 'serif') fontFamily = 'Georgia, serif';
+
+      document.documentElement.style.setProperty('--main-font', fontFamily);
+      localStorage.setItem('coffee_app_font', val);
+    }
+
+    function initDensityAndFont() {
+      const savedDensity = localStorage.getItem('coffee_app_density') || 'normal';
+      const savedFont = localStorage.getItem('coffee_app_font') || 'system';
+
+      document.getElementById('densitySelect').value = savedDensity;
+      changeDensity(savedDensity);
+
+      document.getElementById('fontSelect').value = savedFont;
+      changeFont(savedFont);
+    }
+
+    // ТАЙМЕР ПРОЛИВА
+    let timerInterval = null;
+    let timerStartTime = 0;
+    let timerElapsedTime = 0;
+
+    function toggleTimerBody() {
+      const body = document.getElementById('timerBody');
+      const icon = document.getElementById('timerFoldIcon');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        icon.textContent = '▲';
+      } else {
+        body.style.display = 'none';
+        icon.textContent = '▼';
+      }
+    }
+
+    function startTimer() {
+      if (timerInterval) return;
+      timerStartTime = Date.now() - timerElapsedTime;
+      timerInterval = setInterval(() => {
+        timerElapsedTime = Date.now() - timerStartTime;
+        updateTimerDisplay();
+      }, 100);
+    }
+
+    function pauseTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      timerElapsedTime = 0;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const totalSeconds = Math.floor(timerElapsedTime / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const tenths = Math.floor((timerElapsedTime % 1000) / 100);
+
+      const mStr = String(minutes).padStart(2, '0');
+      const sStr = String(seconds).padStart(2, '0');
+
+      document.getElementById('timerText').textContent = `${mStr}:${sStr}.${tenths}`;
+    }
+
     function setStatus(text, isError = false) {
       const b = document.getElementById('statusBadge');
       if (b) {
@@ -412,7 +595,7 @@
     }
 
     function initTheme() {
-      const savedTheme = localStorage.getItem('coffee_app_theme') || 'dark'; // По умолчанию темная холодная тема
+      const savedTheme = localStorage.getItem('coffee_app_theme') || 'dark';
       document.documentElement.setAttribute('data-theme', savedTheme);
       updateThemeBtnText(savedTheme);
     }
@@ -847,6 +1030,8 @@
           tags: r.tags,
           img: r.img,
           recipe: r.recipe,
+          made_date: r.made_date,
+          shelf_days: r.shelf_days,
           shop_id: newShopId
         }));
         await db.from('recipes').insert(clonedRecipes);
@@ -1108,6 +1293,31 @@
       }
     }
 
+    function getExpiryHtml(madeDateStr, shelfDaysNum) {
+      if (!madeDateStr || !shelfDaysNum) return '';
+
+      const madeDate = new Date(madeDateStr);
+      if (isNaN(madeDate.getTime())) return '';
+
+      const expiryDate = new Date(madeDate);
+      expiryDate.setDate(expiryDate.getDate() + Number(shelfDaysNum));
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      expiryDate.setHours(0,0,0,0);
+
+      const diffTime = expiryDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        return `<div class="expiry-badge expiry-red">🚨 Срок годности истек, подлежит списанию!</div>`;
+      } else if (diffDays <= 1) {
+        return `<div class="expiry-badge expiry-yellow">⚠️ Срок годности истекает сегодня (${diffDays === 0 ? 'сегодня' : 'через 1 день'})</div>`;
+      } else {
+        return `<div class="expiry-badge expiry-green">🟢 Срок годности истекает через ${diffDays} дн.</div>`;
+      }
+    }
+
     function renderCards() {
       const cardsContainer = document.getElementById('cardsContainer');
       const rawQuery = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -1172,6 +1382,8 @@
           `;
         }
 
+        const expiryBadgeHtml = getExpiryHtml(item.made_date, item.shelf_days);
+
         card.innerHTML = `
           <div class="card-actions">${actionsHtml}</div>
           <div class="card-header">
@@ -1183,6 +1395,7 @@
             <strong>Теги:</strong> 
             ${item.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
           </div>
+          ${expiryBadgeHtml}
           <div class="card-body">
             <img src="${item.img || defaultImg}" alt="${escapeHtml(item.title)}" class="card-img" onerror="this.src='${defaultImg}'">
             <div class="card-content">
@@ -1232,6 +1445,8 @@
       document.getElementById('itemName').value = item.title;
       document.getElementById('itemPrice').value = item.price || '';
       document.getElementById('itemCalories').value = item.calories || '';
+      document.getElementById('itemMadeDate').value = item.made_date || '';
+      document.getElementById('itemShelfDays').value = item.shelf_days || '';
       document.getElementById('itemImg').value = item.img || '';
       document.getElementById('itemRecipe').value = item.recipe;
 
@@ -1282,6 +1497,8 @@
       const title = document.getElementById('itemName').value;
       const price = document.getElementById('itemPrice').value;
       const calories = document.getElementById('itemCalories').value;
+      const made_date = document.getElementById('itemMadeDate').value;
+      const shelf_days = document.getElementById('itemShelfDays').value;
       const img = document.getElementById('itemImg').value;
       const recipe = document.getElementById('itemRecipe').value;
       const checkedTags = Array.from(document.getElementById('tagCheckboxes').querySelectorAll('input:checked')).map(cb => cb.value);
@@ -1293,6 +1510,8 @@
         title,
         price,
         calories,
+        made_date,
+        shelf_days,
         tags: checkedTags,
         img,
         recipe,
@@ -1334,6 +1553,7 @@
 
     document.getElementById('searchInput').addEventListener('input', renderCards);
     initTheme();
+    initDensityAndFont();
     loadShops();
   </script>
 </body>
