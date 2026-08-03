@@ -162,7 +162,6 @@
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
-    /* ТЕГИ: ПО УМОЛЧАНИЮ В НЕСКОЛЬКО СТРОК */
     .tags-filter { 
       display: flex; 
       flex-wrap: wrap; 
@@ -170,7 +169,6 @@
       margin-bottom: 10px; 
     }
     
-    /* ТЕГИ: ПРИ ПОИСКЕ В ОДНУ СТРОКУ СО СКРОЛЛОМ */
     body.search-focused .tags-filter {
       flex-wrap: nowrap;
       overflow-x: auto;
@@ -851,6 +849,7 @@
         amount: finalTotal,
         payment_method: method,
         items_summary: itemsSummary,
+        created_by: currentUser.login, // Записываем имя бариста
         created_at: new Date().toISOString()
       };
 
@@ -948,12 +947,14 @@
         const dateStr = dateObj.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
         const timeStr = dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const isCard = sale.payment_method === 'card';
+        const baristaName = sale.created_by ? escapeHtml(sale.created_by) : 'бариста';
 
         historyContainer.innerHTML += `
           <div class="history-item">
             <div>
               <strong>${sale.amount} ₽</strong> — <span class="${isCard ? 'history-badge-card' : 'history-badge-cash'}">${isCard ? 'Карта' : 'Наличные'}</span>
               <div style="font-size: 11px; color: var(--secondary-text); margin-top: 2px;">${escapeHtml(sale.items_summary || 'Без состава')}</div>
+              <div style="font-size: 10px; color: var(--accent-color); font-weight: bold; margin-top: 2px;">👤 бариста: ${baristaName}</div>
             </div>
             <div style="font-size: 12px; color: var(--secondary-text); text-align: right; display: flex; align-items: center;">
               <span>${dateStr}<br>${timeStr}</span>
@@ -1425,7 +1426,6 @@
           actionsHtml += `<button class="btn-copy" onclick="makeCopyItem(${item.id})">📋 Копия</button>`;
         }
 
-        // Выставленное разрешено удалять и редактировать всем (и Бариста, и Админу)
         if (!isBarista) {
           actionsHtml += `
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
