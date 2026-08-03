@@ -162,19 +162,24 @@
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
-    /* ТЕГИ: ОДНА СТРОКА С ГОРИЗОНТАЛЬНЫМ СКРОЛЛОМ */
+    /* ТЕГИ: ПО УМОЛЧАНИЮ В НЕСКОЛЬКО СТРОК */
     .tags-filter { 
       display: flex; 
-      flex-wrap: nowrap; 
+      flex-wrap: wrap; /* По умолчанию теги в куче */
       gap: 8px; 
       margin-bottom: 10px; 
-      overflow-x: auto; 
+    }
+    
+    /* ТЕГИ: ПРИ ПОИСКЕ В ОДНУ СТРОКУ СО СКРОЛЛОМ */
+    body.search-focused .tags-filter {
+      flex-wrap: nowrap;
+      overflow-x: auto;
       padding-bottom: 6px;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: thin;
     }
-    .tags-filter::-webkit-scrollbar { height: 4px; }
-    .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    body.search-focused .tags-filter::-webkit-scrollbar { height: 4px; }
+    body.search-focused .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
     .tag-btn { 
       border: none; 
@@ -531,7 +536,7 @@
       auth: { persistSession: false }
     });
 
-    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
+    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Десерты", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
     
     let items = [];
     let cart = [];
