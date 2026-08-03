@@ -1425,6 +1425,7 @@
           actionsHtml += `<button class="btn-copy" onclick="makeCopyItem(${item.id})">📋 Копия</button>`;
         }
 
+        // Выставленное разрешено удалять и редактировать всем (и Бариста, и Админу)
         if (!isBarista) {
           actionsHtml += `
             <button class="btn-edit" onclick="editItem(${item.id})">Edit</button>
@@ -1432,6 +1433,9 @@
           `;
         } else if (isBarista && (isResidualTag || isExhibitedTag)) {
           actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">Изм. сроки</button>`;
+          if (isExhibitedTag) {
+            actionsHtml += `<button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>`;
+          }
         }
 
         if (isShiftMode && isResidualTag) {
@@ -1497,18 +1501,16 @@
       renderCards();
     };
 
-    // СОЗДАНИЕ КОПИИ БАРИСТА С ПРИСВОЕНИЕМ ТЕГА "Выставленное"
     window.makeCopyItem = function(id) {
       const item = items.find(i => i.id === id);
       if (!item) return;
 
-      document.getElementById('editItemId').value = ''; // Новая запись
+      document.getElementById('editItemId').value = '';
       document.getElementById('isCopyAction').value = '1';
       document.getElementById('itemName').value = item.title;
       document.getElementById('itemPrice').value = item.price || '';
       document.getElementById('itemCalories').value = item.calories || '';
       
-      // Автоматом ставим сегодня в дату изготовления
       const todayIso = new Date().toISOString().split('T')[0];
       document.getElementById('itemMadeDate').value = todayIso;
       document.getElementById('itemShelfDays').value = item.shelf_days || '';
@@ -1519,13 +1521,12 @@
       const checkboxes = document.getElementById('tagCheckboxes').querySelectorAll('input');
       checkboxes.forEach(cb => {
         if (cb.value === "Выставленное") {
-          cb.checked = true; // Обязательный тег
+          cb.checked = true;
         } else {
           cb.checked = item.tags.includes(cb.value);
         }
       });
 
-      // Бариста не меняют баз. информацию, только даты и остатки
       document.getElementById('itemName').disabled = true;
       document.getElementById('itemPrice').disabled = true;
       document.getElementById('itemCalories').disabled = true;
