@@ -164,7 +164,7 @@
     
     .btn-submit { width: 100%; background: #2ecc71; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; }
     .btn-cancel { width: 100%; background: #95a5a6; color: white; border: none; padding: 8px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 5px; display: none; }
-    .status-badge { text-align: center; font-size: 12px; color: #2ecc71; margin-bottom: 10px; font-weight: bold; }
+    .status-badge { text-align: center; font-size: 12px; color: #2ecc71; margin-bottom: 10px; font-weight: bold; transition: color 0.3s; }
   </style>
 </head>
 <body>
@@ -233,7 +233,7 @@
 
       <div class="search-box">
         <input type="text" id="searchInput" class="search-input" placeholder="Поиск (например: сироп -орехи)...">
-        <div class="search-hint">💡 Испольуйте <strong>-слово</strong> чтобы исключить аллергены или ингредиенты (например: <code>-орехи</code>)</div>
+        <div class="search-hint">💡 Используйте <strong>-слово</strong> чтобы исключить аллергены (например: <code>-орехи</code>)</div>
         <div class="tags-filter" id="tagsFilter"></div>
         
         <div class="shift-panel" id="shiftPanel">
@@ -343,18 +343,28 @@
     const SUPABASE_URL = 'https://pigciguqbzeiyaanougn.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZ2NpZ3VxYnplaXlhYW5vdWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NjY5NDQsImV4cCI6MjEwMTI0Mjk0NH0.iKDW6c6f286G48oCcRyCuQmqdoEmw6PZvk73uAwSf9U';
 
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false }
+    });
 
-    // Добавлены новые теги: "Выпечка", "Вегетарианское", "Мясное"
     const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Смена", "Остаток"];
     
     let items = [];
     let cart = [];
+    let salesHistory = null; // Локальный кэш продаж
     let shops = [{ id: 1, name: 'Cafellini' }];
     let currentUser = null;
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
+
+    function setStatus(text, isError = false) {
+      const b = document.getElementById('statusBadge');
+      if (b) {
+        b.textContent = text;
+        b.style.color = isError ? '#e74c3c' : '#2ecc71';
+      }
+    }
 
     function initTheme() {
       const savedTheme = localStorage.getItem('coffee_app_theme') || 'light';
@@ -386,7 +396,9 @@
         document.getElementById('tabReceiptsBtn').classList.add('active');
         document.getElementById('tabSearchSection').style.display = 'none';
         document.getElementById('tabReceiptsSection').style.display = 'block';
-        fetchDailySales();
+        if (!salesHistory) {
+          fetchDailySales();
+        }
       }
     }
 
@@ -454,6 +466,8 @@
 
       if (!confirm(`Провести чек на сумму ${totalAmount} ₽ (${paymentName})?`)) return;
 
+      setStatus('⏳ Проводим чек...');
+
       const receiptPayload = {
         id: Date.now(),
         shop_id: currentUser.shop_id,
@@ -466,45 +480,67 @@
       const { error } = await db.from('sales').insert(receiptPayload);
 
       if (error) {
+        setStatus('⚠️ Ошибка сохранения чека', true);
         alert('Ошибка проведения оплаты: ' + error.message);
       } else {
+        setStatus('☁️ Подключено к облачной базе');
         alert('✅ Чек успешно проведён!');
         cart = [];
         updateCartUI();
-        fetchDailySales();
+        fetchDailySales(true); // Зануляем кэш и перекачиваем
       }
     }
 
     window.deleteReceipt = async function(id) {
-      if (!confirm("Удалить этот чек из истории? Сумма с пишется с кассы.")) return;
+      if (!confirm("Удалить этот чек из истории? Сумма спишется с кассы.")) return;
 
+      setStatus('⏳ Удаляем чек...');
       const { error } = await db.from('sales').delete().eq('id', id);
       if (error) {
+        setStatus('⚠️ Ошибка удаления', true);
         alert('Ошибка при удалении чека: ' + error.message);
       } else {
-        fetchDailySales();
+        setStatus('☁️ Подключено к облачной базе');
+        fetchDailySales(true);
       }
     };
 
-    async function fetchDailySales() {
-      const shiftStart = getShiftStartTime();
+    async function fetchDailySales(forceRefresh = false) {
+      const historyContainer = document.getElementById('historyListContainer');
       
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-      const { data, error } = await db.from('sales')
-        .select('*')
-        .eq('shop_id', currentUser.shop_id)
-        .gte('created_at', sevenDaysAgo.toISOString())
-        .order('id', { ascending: false });
-
-      if (error) {
-        console.error('Ошибка загрузки продаж:', error);
+      if (!forceRefresh && salesHistory) {
+        renderSalesUI(salesHistory);
         return;
       }
 
-      const salesList = data || [];
+      historyContainer.innerHTML = '<p style="text-align: center; color: #888;">Загрузка кассы...</p>';
+      setStatus('⏳ Обновляем кассу...');
 
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      try {
+        const { data, error } = await db.from('sales')
+          .select('*')
+          .eq('shop_id', currentUser.shop_id)
+          .gte('created_at', sevenDaysAgo.toISOString())
+          .order('id', { ascending: false });
+
+        if (error) throw error;
+
+        salesHistory = data || [];
+        setStatus('☁️ Подключено к облачной базе');
+        renderSalesUI(salesHistory);
+
+      } catch (err) {
+        console.error('Ошибка кассы:', err);
+        setStatus('⚠️ База недоступна (проверьте интернет)', true);
+        historyContainer.innerHTML = '<p style="text-align: center; color: red;">Не удалось загрузить кассу</p>';
+      }
+    }
+
+    function renderSalesUI(salesList) {
+      const shiftStart = getShiftStartTime();
       let cardSum = 0;
       let cashSum = 0;
 
@@ -599,6 +635,8 @@
         return;
       }
 
+      setStatus('⏳ Проверяем пароль...');
+
       const { data, error } = await db.from('users').select('*')
         .eq('login', login)
         .eq('password', pass)
@@ -606,8 +644,10 @@
         .single();
 
       if (error || !data) {
+        setStatus('⚠️ Ошибка авторизации', true);
         alert('Неверный логин, пароль или кофейня!');
       } else {
+        setStatus('☁️ Подключено к облачной базе');
         currentUser = data;
         saveSession(currentUser);
         initApp();
@@ -633,11 +673,11 @@
 
       initTags();
       fetchItems();
-      fetchDailySales();
     }
 
     function logout() {
       currentUser = null;
+      salesHistory = null;
       localStorage.removeItem('coffee_app_user');
       document.getElementById('loginBlock').style.display = 'block';
       document.getElementById('mainAppBlock').style.display = 'none';
@@ -786,19 +826,25 @@
 
     async function fetchItems() {
       const cardsContainer = document.getElementById('cardsContainer');
-      cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Загрузка данных...</p>';
+      cardsContainer.innerHTML = '<p style="text-align:center; color:#888;">Подключение к базе данных...</p>';
+      setStatus('⏳ Загрузка меню...');
       
-      const { data, error } = await db.from('recipes')
-        .select('*')
-        .or(`shop_id.eq.${currentUser.shop_id},shop_id.is.null`)
-        .order('id', { ascending: false });
+      try {
+        const { data, error } = await db.from('recipes')
+          .select('*')
+          .or(`shop_id.eq.${currentUser.shop_id},shop_id.is.null`)
+          .order('id', { ascending: false });
 
-      if (error) {
-        console.error(error);
-        cardsContainer.innerHTML = '<p style="text-align:center; color:red;">Ошибка загрузки базы</p>';
-      } else {
+        if (error) throw error;
+
         items = data || [];
+        setStatus('☁️ Подключено к облачной базе');
         renderCards();
+
+      } catch (err) {
+        console.error(err);
+        setStatus('⚠️ Ошибка связи с базой (Supabase спит?)', true);
+        cardsContainer.innerHTML = '<p style="text-align:center; color:red;">База данных не отвечает. Обновите страницу через 5 секунд.</p>';
       }
     }
 
@@ -807,7 +853,6 @@
       const rawQuery = document.getElementById('searchInput').value.toLowerCase().trim();
       cardsContainer.innerHTML = '';
 
-      // Разбираем поисковый запрос на обычные слова и минус-слова
       const tokens = rawQuery.split(/\s+/).filter(t => t.length > 0);
       const includeWords = tokens.filter(t => !t.startsWith('-'));
       const excludeWords = tokens.filter(t => t.startsWith('-') && t.length > 1).map(t => t.slice(1));
@@ -817,14 +862,10 @@
         const recipeLower = item.recipe.toLowerCase();
         const combinedText = titleLower + ' ' + recipeLower;
 
-        // 1. ПРОВЕРКА МИНУС-СЛОВ (Исключения): если в тексте есть хоть одно минус-слово — скрываем карточку
         const hasExcludedWord = excludeWords.some(exWord => combinedText.includes(exWord));
         if (hasExcludedWord) return false;
 
-        // 2. ПРОВЕРКА ОБЫЧНЫХ СЛОВ: все обычные слова должны присутствовать в тексте
         const matchesSearch = includeWords.every(incWord => combinedText.includes(incWord));
-
-        // 3. ПРОВЕРКА ТЕГА
         const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
 
         return matchesSearch && matchesTag;
@@ -985,6 +1026,8 @@
       const recipe = document.getElementById('itemRecipe').value;
       const checkedTags = Array.from(document.getElementById('tagCheckboxes').querySelectorAll('input:checked')).map(cb => cb.value);
 
+      setStatus('⏳ Сохраняем...');
+
       const payload = {
         id: editId ? Number(editId) : Date.now(),
         title,
@@ -998,8 +1041,10 @@
 
       const { error } = await db.from('recipes').upsert(payload);
       if (error) {
+        setStatus('⚠️ Ошибка сохранения', true);
         alert('Ошибка сохранения: ' + error.message);
       } else {
+        setStatus('☁️ Подключено к облачной базе');
         if (editId && isShiftMode) checkedShiftIds.add(Number(editId));
         await fetchItems();
         resetForm();
@@ -1008,10 +1053,13 @@
 
     window.deleteItem = async function(id) {
       if (confirm("Удалить эту позицию?")) {
+        setStatus('⏳ Удаляем позицию...');
         const { error } = await db.from('recipes').delete().eq('id', id);
         if (error) {
+          setStatus('⚠️ Ошибка удаления', true);
           alert('Ошибка при удалении: ' + error.message);
         } else {
+          setStatus('☁️ Подключено к облачной базе');
           checkedShiftIds.delete(id);
           await fetchItems();
         }
