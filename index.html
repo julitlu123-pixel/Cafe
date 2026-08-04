@@ -82,6 +82,16 @@
     
     h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
 
+    /* ФИКСИРОВАННАЯ ВЕРХНЯЯ СЕКЦИЯ (НЕ ПЕРЕКРЫВАЕТСЯ) */
+    .sticky-top-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: var(--bg-color);
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
     /* ШТОРКА ДЛЯ ВЕРХНЕЙ ПАНЕЛИ */
     .top-curtain-btn {
       width: 100%;
@@ -96,15 +106,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
+    /* ИЗНАЧАЛЬНО СКРЫТАЯ ВЕРХНЯЯ СЕКЦИЯ */
     .top-collapsible-wrapper {
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 10px;
       margin-bottom: 10px;
-      transition: max-height 0.3s ease;
     }
     
     /* ПАНЕЛЬ НАСТРОЕК ВНЕДРЕНИЯ (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) */
@@ -155,8 +165,8 @@
     .expiry-yellow { background: rgba(241, 196, 15, 0.22); color: #f39c12; border: 1px solid #f39c12; }
     .expiry-red { background: rgba(231, 76, 60, 0.22); color: #e74c3c; border: 1px solid #e74c3c; }
 
-    /* ВКЛАДКИ НАВИГАЦИИ */
-    .app-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    /* ВКЛАДКИ НАВИГАЦИИ ПОД ПОИСКОМ */
+    .app-tabs { display: flex; gap: 10px; margin-top: 10px; margin-bottom: 10px; }
     .tab-btn { flex: 1; padding: 12px; border: none; background: var(--secondary-bg); color: var(--secondary-text); font-size: 15px; font-weight: bold; border-radius: 10px; cursor: pointer; text-align: center; }
     .tab-btn.active { background: var(--accent-color); color: white; }
 
@@ -178,7 +188,7 @@
     .barista-item { display: flex; justify-content: space-between; align-items: center; background: var(--secondary-bg); padding: 6px 10px; border-radius: 6px; font-size: 12px; }
 
     /* СЕКЦИЯ ПОИСКА И ТЕГОВ */
-    .search-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); margin-bottom: 20px; border: 1px solid var(--border-color); }
+    .search-box { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px var(--shadow); border: 1px solid var(--border-color); }
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
@@ -187,7 +197,6 @@
       display: flex; 
       flex-wrap: wrap; 
       gap: 8px; 
-      margin-bottom: 10px; 
     }
 
     .tag-btn { 
@@ -269,7 +278,7 @@
     .btn-delete-receipt { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 10px; }
 
     /* КАРТОЧКИ С НАСТРОЙКОЙ КОМПАКТНОСТИ */
-    .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-bottom: 25px; }
+    .cards-scroll-container { max-height: 480px; overflow-y: auto; padding-right: 6px; margin-top: 10px; margin-bottom: 25px; }
     .cards-list { display: grid; gap: var(--card-gap); }
     .card { 
       background: var(--card-bg); 
@@ -347,103 +356,98 @@
   <!-- Главный экран -->
   <div id="mainAppBlock" style="display: none;">
 
-    <!-- КНОПКА-ШТОРКА ВЕРХНЕЙ ПАНЕЛИ -->
-    <button class="top-curtain-btn" onclick="toggleTopCurtain()">
-      <span>👤 <span id="topCurtainUserTitle">Пользователь</span></span>
-      <span id="topCurtainIcon">▲ Скрыть шапку</span>
-    </button>
-
-    <!-- СВОРАЧИВАЕМАЯ ВЕРХНЯЯ СЕКЦИЯ -->
-    <div id="topCollapsibleSection" class="top-collapsible-wrapper">
+    <!-- ФИКСИРОВАННЫЙ ВЕРХНИЙ БЛОК (ШАПКА И ПОИСК) -->
+    <div class="sticky-top-header">
       
-      <!-- ВЕРХНЯЯ ПАНЕЛЬ НАСТРОЕК (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) -->
-      <div class="top-settings-bar">
-        <select id="densitySelect" class="setting-select" onchange="changeDensity(this.value)">
-          <option value="normal">📐 Стандартный размер</option>
-          <option value="compact">📱 Компактный (для тел.)</option>
-          <option value="dense">🔍 Плотный список</option>
-        </select>
+      <!-- КНОПКА-ШТОРКА ВЕРХНЕЙ ПАНЕЛИ -->
+      <button class="top-curtain-btn" onclick="toggleTopCurtain()">
+        <span>👤 <span id="topCurtainUserTitle">Пользователь</span></span>
+        <span id="topCurtainIcon">▼ Показать шапку</span>
+      </button>
 
-        <select id="fontSelect" class="setting-select" onchange="changeFont(this.value)">
-          <option value="system">🔤 Шрифты: Системный</option>
-          <option value="rounded">🔤 Шрифты: Rounded</option>
-          <option value="mono">🔤 Шрифты: Monospace</option>
-          <option value="serif">🔤 Шрифты: Serif</option>
-        </select>
+      <!-- ИЗНАЧАЛЬНО СКРЫТАЯ ВЕРХНЯЯ СЕКЦИЯ -->
+      <div id="topCollapsibleSection" class="top-collapsible-wrapper">
+        
+        <!-- ВЕРХНЯЯ ПАНЕЛЬ НАСТРОЕК (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) -->
+        <div class="top-settings-bar">
+          <select id="densitySelect" class="setting-select" onchange="changeDensity(this.value)">
+            <option value="normal">📐 Стандартный размер</option>
+            <option value="compact">📱 Компактный (для тел.)</option>
+            <option value="dense">🔍 Плотный список</option>
+          </select>
 
-        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" style="position: static;">🌙 Тёмная</button>
-      </div>
+          <select id="fontSelect" class="setting-select" onchange="changeFont(this.value)">
+            <option value="system">🔤 Шрифты: Системный</option>
+            <option value="rounded">🔤 Шрифты: Rounded</option>
+            <option value="mono">🔤 Шрифты: Monospace</option>
+            <option value="serif">🔤 Шрифты: Serif</option>
+          </select>
 
-      <!-- ШАПКА ПОЛЬЗОВАТЕЛЯ -->
-      <div class="user-bar">
-        <div>
-          <strong>Кофейня:</strong> <span id="userShopName">Cafellini</span> | 
-          <strong>Пользователь:</strong> <span id="userName"></span> (<span id="userRole"></span>)
+          <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" style="position: static;">🌙 Тёмная</button>
         </div>
-        <div>
-          <button class="btn-user-edit" id="btnAdminToolsToggle" onclick="toggleAdminPanel()" style="display: none;">✏️ Редактировать</button>
-          <button class="btn-logout" onclick="logout()">Выйти</button>
-        </div>
-      </div>
 
-      <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
-
-      <!-- ТАЙМЕР ПРОЛИВА (ЭСПРЕССО) -->
-      <div class="timer-widget">
-        <div class="timer-header" onclick="toggleTimerBody()">
-          <strong>⏱️ Таймер пролива группы</strong>
-          <span id="timerFoldIcon">▼</span>
-        </div>
-        <div id="timerBody" style="display: none; margin-top: 10px;">
-          <div class="timer-display" id="timerText">00:00.0</div>
-          <div class="timer-controls">
-            <button class="btn-timer btn-timer-start" id="btnTimerStart" onclick="startTimer()">▶ Старт</button>
-            <button class="btn-timer btn-timer-pause" id="btnTimerPause" onclick="pauseTimer()">⏸ Пауза</button>
-            <button class="btn-timer btn-timer-reset" onclick="resetTimer()">🔄 Сброс</button>
+        <!-- ШАПКА ПОЛЬЗОВАТЕЛЯ -->
+        <div class="user-bar">
+          <div>
+            <strong>Кофейня:</strong> <span id="userShopName">Cafellini</span> | 
+            <strong>Пользователь:</strong> <span id="userName"></span> (<span id="userRole"></span>)
+          </div>
+          <div>
+            <button class="btn-user-edit" id="btnAdminToolsToggle" onclick="toggleAdminPanel()" style="display: none;">✏️ Редактировать</button>
+            <button class="btn-logout" onclick="logout()">Выйти</button>
           </div>
         </div>
-      </div>
 
-      <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
-      <div class="admin-tools" id="adminToolsPanel" style="display: none;">
-        <h3>⚙️ Управление системой (Администратор)</h3>
-        <div class="admin-grid">
-          <div>
-            <label style="font-size: 12px; font-weight: bold;">Управление кофейнями:</label>
-            <input type="text" id="newShopName" class="form-control" placeholder="Название кофейни" style="margin-bottom: 4px;">
-            <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-              <button onclick="createNewShop()" class="btn-submit" style="padding: 6px; font-size: 11px; margin-top: 0; flex: 1;">➕ Создать</button>
-              <button onclick="renameCurrentShop()" class="btn-submit" style="padding: 6px; font-size: 11px; margin-top: 0; background: #e67e22; flex: 1;">✏️ Изменить</button>
-              <button onclick="deleteCurrentShop()" class="btn-submit" style="padding: 6px; font-size: 11px; margin-top: 0; background: #e74c3c; flex: 1;">🗑️ Удалить</button>
+        <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
+
+        <!-- ТАЙМЕР ПРОЛИВА (ЭСПРЕССО) -->
+        <div class="timer-widget">
+          <div class="timer-header" onclick="toggleTimerBody()">
+            <strong>⏱️ Таймер пролива группы</strong>
+            <span id="timerFoldIcon">▼</span>
+          </div>
+          <div id="timerBody" style="display: none; margin-top: 10px;">
+            <div class="timer-display" id="timerText">00:00.0</div>
+            <div class="timer-controls">
+              <button class="btn-timer btn-timer-start" id="btnTimerStart" onclick="startTimer()">▶ Старт</button>
+              <button class="btn-timer btn-timer-pause" id="btnTimerPause" onclick="pauseTimer()">⏸ Пауза</button>
+              <button class="btn-timer btn-timer-reset" onclick="resetTimer()">🔄 Сброс</button>
             </div>
           </div>
-          <div>
-            <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
-            <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин" style="margin-bottom: 4px;">
-            <input type="password" id="newBaristaPass" class="form-control" placeholder="Пароль" style="margin-bottom: 4px;">
-            <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: var(--accent-color);">Зарегистрировать</button>
+        </div>
+
+        <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
+        <div class="admin-tools" id="adminToolsPanel" style="display: none;">
+          <h3>⚙️ Управление системой (Администратор)</h3>
+          <div class="admin-grid">
+            <div>
+              <label style="font-size: 12px; font-weight: bold;">Управление кофейнями:</label>
+              <input type="text" id="newShopName" class="form-control" placeholder="Название кофейни" style="margin-bottom: 4px;">
+              <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                <button onclick="createNewShop()" class="btn-submit" style="padding: 6px; font-size: 11px; margin-top: 0; flex: 1;">➕ Создать</button>
+                <button onclick="renameCurrentShop()" class="btn-submit" style="padding: 6px; font-size: 11px; margin-top: 0; background: #e67e22; flex: 1;">✏️ Изменить</button>
+                <button onclick="deleteCurrentShop()" class="btn-submit" style="padding: 6px; font-size: 11px; margin-top: 0; background: #e74c3c; flex: 1;">🗑️ Удалить</button>
+              </div>
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold;">Создать аккаунт Бариста:</label>
+              <input type="text" id="newBaristaLogin" class="form-control" placeholder="Логин" style="margin-bottom: 4px;">
+              <input type="password" id="newBaristaPass" class="form-control" placeholder="Пароль" style="margin-bottom: 4px;">
+              <button onclick="createNewBarista()" class="btn-submit" style="padding: 6px; font-size: 12px; margin-top: 0; background: var(--accent-color);">Зарегистрировать</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+            <label style="font-size: 12px; font-weight: bold;">Список аккаунтов бариста этой точки:</label>
+            <div class="barista-list" id="baristaAccountsContainer">
+              <span style="color: #888;">Загрузка списка...</span>
+            </div>
           </div>
         </div>
 
-        <div style="margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px;">
-          <label style="font-size: 12px; font-weight: bold;">Список аккаунтов бариста этой точки:</label>
-          <div class="barista-list" id="baristaAccountsContainer">
-            <span style="color: #888;">Загрузка списка...</span>
-          </div>
-        </div>
       </div>
 
-    </div>
-
-    <!-- Вкладки навигации -->
-    <div class="app-tabs">
-      <button class="tab-btn active" id="tabSearchBtn" onclick="switchTab('search')">🔍 Поиск и Меню</button>
-      <button class="tab-btn" id="tabReceiptsBtn" onclick="switchTab('receipts')">🧾 Чеки и Касса (<span id="cartCountBadge">0</span>)</button>
-    </div>
-
-    <!-- Раздел: Поиск и Меню -->
-    <div id="tabSearchSection">
-
+      <!-- БЛОК ПОИСКА И ТЕГОВ -->
       <div class="search-box">
         <input type="text" id="searchInput" class="search-input" placeholder="Поиск (например: сироп -орехи)...">
         <div class="search-hint">💡 Используйте <strong>-слово</strong> чтобы исключить аллергены (например: <code>-орехи</code>)</div>
@@ -461,6 +465,17 @@
           </div>
         </div>
       </div>
+
+      <!-- ВКЛАДКИ НАВИГАЦИИ (ПОД ПОИСКОМ И ТЕГАМИ) -->
+      <div class="app-tabs">
+        <button class="tab-btn active" id="tabSearchBtn" onclick="switchTab('search')">🔍 Поиск и Меню</button>
+        <button class="tab-btn" id="tabReceiptsBtn" onclick="switchTab('receipts')">🧾 Чеки и Касса (<span id="cartCountBadge">0</span>)</button>
+      </div>
+
+    </div>
+
+    <!-- Раздел: Поиск и Меню -->
+    <div id="tabSearchSection">
 
       <!-- Список карточек меню -->
       <div class="cards-scroll-container">
@@ -595,7 +610,7 @@
     let isShiftMode = false;
     let checkedShiftIds = new Set();
     let searchDebounceTimer = null;
-    let isTopCurtainOpen = true;
+    let isTopCurtainOpen = false; // Изначально скрыта
 
     // УПРАВЛЕНИЕ ШТОРКОЙ ВЕРХНЕЙ ПАНЕЛИ
     function toggleTopCurtain() {
