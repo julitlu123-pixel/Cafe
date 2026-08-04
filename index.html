@@ -168,6 +168,7 @@
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
+    /* ТЕГИ: ПО УМОЛЧАНИЮ В НЕСКОЛЬКО СТРОК */
     .tags-filter { 
       display: flex; 
       flex-wrap: wrap; 
@@ -175,15 +176,23 @@
       margin-bottom: 10px; 
     }
     
-    body.search-focused .tags-filter {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding-bottom: 6px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: thin;
+    /* ТЕГИ ПРИ ПОИСКЕ: ПРОКРУТКА ТОЛЬКО НА МОБИЛЬНЫХ (ЭКРАН <= 600px) */
+    @media (max-width: 600px) {
+      body.search-focused .tags-filter {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+      }
+      body.search-focused .tags-filter::-webkit-scrollbar { height: 4px; }
+      body.search-focused .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+      body.search-focused .tag-btn {
+        flex-shrink: 0 !important;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
     }
-    body.search-focused .tags-filter::-webkit-scrollbar { height: 4px; }
-    body.search-focused .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
     .tag-btn { 
       border: none; 
@@ -195,7 +204,7 @@
       font-size: 13px; 
       font-weight: 500; 
       white-space: nowrap; 
-      flex-shrink: 0;
+      touch-action: manipulation;
     }
     .tag-btn.active { background: var(--accent-color); color: white; }
 
@@ -542,7 +551,6 @@
       auth: { persistSession: false }
     });
 
-    // Переименован тег: "Не кофе"
     const AVAILABLE_TAGS = ["Кофе", "Не кофе", "Десерты", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Выставленное", "Смена", "Остаток"];
     
     let items = [];
@@ -551,7 +559,7 @@
     let salesHistory = null;
     let shops = [{ id: 1, name: 'Cafellini' }];
     let currentUser = null;
-    let selectedTag = null;
+    let selectedTags = new Set(); // Поддержка мультивыбора тегов
     let isShiftMode = false;
     let checkedShiftIds = new Set();
     let searchDebounceTimer = null;
@@ -1248,7 +1256,10 @@
         const btn = document.createElement('button');
         btn.className = 'tag-btn';
         btn.textContent = tag;
-        btn.onclick = () => toggleTagFilter(tag, btn);
+        btn.onclick = (e) => {
+          e.preventDefault();
+          toggleTagFilter(tag, btn);
+        };
         tagsFilterContainer.appendChild(btn);
       });
 
@@ -1260,32 +1271,27 @@
       });
     }
 
+    // МУЛЬТИВЫБОР ТЕГОВ
     function toggleTagFilter(tag, btnElement) {
-      if (selectedTag === tag) {
-        selectedTag = null;
+      if (selectedTags.has(tag)) {
+        selectedTags.delete(tag);
         btnElement.classList.remove('active');
+      } else {
+        selectedTags.add(tag);
+        btnElement.classList.add('active');
+      }
+
+      if (selectedTags.has("Остаток")) {
+        document.getElementById('shiftPanel').style.display = 'block';
+      } else {
         document.getElementById('shiftPanel').style.display = 'none';
         document.getElementById('reportPreviewBox').style.display = 'none';
         isShiftMode = false;
         checkedShiftIds.clear();
         document.getElementById('btnShiftToggle').classList.remove('active');
         document.getElementById('btnShiftToggle').textContent = '📋 Начать проверку смены';
-      } else {
-        document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
-        selectedTag = tag;
-        btnElement.classList.add('active');
-
-        if (tag === "Остаток") {
-          document.getElementById('shiftPanel').style.display = 'block';
-        } else {
-          document.getElementById('shiftPanel').style.display = 'none';
-          document.getElementById('reportPreviewBox').style.display = 'none';
-          isShiftMode = false;
-          checkedShiftIds.clear();
-          document.getElementById('btnShiftToggle').classList.remove('active');
-          document.getElementById('btnShiftToggle').textContent = '📋 Начать проверку смены';
-        }
       }
+
       renderCards();
     }
 
@@ -1354,7 +1360,6 @@
       }
     }
 
-    // БЕЗОПАСНЫЙ ПОДСЧЁТ СРОКА ГОДНОСТИ
     function getExpiryHtml(madeDateStr, shelfDaysNum) {
       if (!madeDateStr || !shelfDaysNum || isNaN(Number(shelfDaysNum))) return '';
 
@@ -1398,9 +1403,14 @@
         if (hasExcludedWord) return false;
 
         const matchesSearch = includeWords.every(incWord => combinedText.includes(incWord));
-        const matchesTag = selectedTag ? item.tags.includes(selectedTag) : true;
+        
+        // Мультивыбор тегов: карточка должна содержать ВСЕ выбранные теги
+        let matchesTags = true;
+        if (selectedTags.size > 0) {
+          matchesTags = Array.from(selectedTags).every(selectedTag => item.tags.includes(selectedTag));
+        }
 
-        return matchesSearch && matchesTag;
+        return matchesSearch && matchesTags;
       });
 
       if (filteredItems.length === 0) {
@@ -1438,7 +1448,6 @@
             <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
           `;
         } else if (isBarista && (isResidualTag || isExhibitedTag)) {
-          // Разрешаем бариста редактировать описание и сроки карточкам "Остаток" и "Выставленное"
           actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">${isResidualTag ? 'Изм. остаток' : 'Изм. сроки'}</button>`;
           if (isExhibitedTag) {
             actionsHtml += `<button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>`;
@@ -1540,7 +1549,6 @@
       document.getElementById('itemImg').disabled = true;
       document.getElementById('itemRecipe').disabled = false;
 
-      // Требуем срок годности только при выставлении
       document.getElementById('itemShelfDays').setAttribute('required', 'required');
 
       document.getElementById('adminSection').style.display = 'block';
@@ -1573,7 +1581,6 @@
       const isExhibited = item.tags.includes("Выставленное");
       const isResidual = item.tags.includes("Остаток");
 
-      // Бариста разрешено редактировать описание в "Остаток" и "Выставленное"
       if (isBarista && !isExhibited && !isResidual) {
         document.getElementById('itemName').disabled = true;
         document.getElementById('itemPrice').disabled = true;
@@ -1585,7 +1592,7 @@
         document.getElementById('itemPrice').disabled = true;
         document.getElementById('itemCalories').disabled = true;
         document.getElementById('itemImg').disabled = true;
-        document.getElementById('itemRecipe').disabled = false; // Позволяем менять остаток/описание
+        document.getElementById('itemRecipe').disabled = false;
       } else {
         document.getElementById('itemName').disabled = false;
         document.getElementById('itemPrice').disabled = false;
@@ -1660,7 +1667,6 @@
         shop_id: currentUser.shop_id
       };
 
-      // Локальное «оптимистичное» обновление без тяжелого перезапроса к базе (убирает лаг)
       const existingIndex = items.findIndex(i => i.id === targetId);
       if (existingIndex !== -1) {
         items[existingIndex] = payload;
@@ -1673,7 +1679,7 @@
       if (error) {
         setStatus('⚠️ Ошибка сохранения', true);
         alert('Ошибка сохранения: ' + error.message);
-        await fetchItems(); // Загружаем актуальные данные в случае ошибки
+        await fetchItems();
       } else {
         setStatus('☁️ Подключено к облачной базе');
         if (editId && isShiftMode) checkedShiftIds.add(Number(editId));
@@ -1685,7 +1691,6 @@
       if (confirm("Удалить эту позицию?")) {
         setStatus('⏳ Удаляем позицию...');
         
-        // Быстрое локальное удаление для плавности интерфейса
         items = items.filter(i => i.id !== id);
         checkedShiftIds.delete(id);
         renderCards();
@@ -1707,7 +1712,6 @@
       });
     }
 
-    // Debounce на ввод в строку поиска для исключения задержек при наборе
     document.getElementById('searchInput').addEventListener('input', () => {
       clearTimeout(searchDebounceTimer);
       searchDebounceTimer = setTimeout(renderCards, 150);
