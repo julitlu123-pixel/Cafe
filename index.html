@@ -542,7 +542,8 @@
       auth: { persistSession: false }
     });
 
-    const AVAILABLE_TAGS = ["Кофе", "Напиток без кофеина", "Десерты", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Выставленное", "Смена", "Остаток"];
+    // Переименован тег: "Не кофе"
+    const AVAILABLE_TAGS = ["Кофе", "Не кофе", "Десерты", "Выпечка", "Вегетарианское", "Мясное", "Горячее", "Холодное", "Диетическое", "Аллергенное", "Соевое", "Выставленное", "Смена", "Остаток"];
     
     let items = [];
     let cart = [];
@@ -553,6 +554,7 @@
     let selectedTag = null;
     let isShiftMode = false;
     let checkedShiftIds = new Set();
+    let searchDebounceTimer = null;
 
     function initSearchFocusHandlers() {
       const searchInput = document.getElementById('searchInput');
@@ -1436,7 +1438,8 @@
             <button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>
           `;
         } else if (isBarista && (isResidualTag || isExhibitedTag)) {
-          actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">Изм. сроки</button>`;
+          // Разрешаем бариста редактировать описание и сроки карточкам "Остаток" и "Выставленное"
+          actionsHtml += `<button class="btn-edit" onclick="editItem(${item.id})">${isResidualTag ? 'Изм. остаток' : 'Изм. сроки'}</button>`;
           if (isExhibitedTag) {
             actionsHtml += `<button class="btn-delete" onclick="deleteItem(${item.id})">Удалить</button>`;
           }
@@ -1535,6 +1538,7 @@
       document.getElementById('itemPrice').disabled = true;
       document.getElementById('itemCalories').disabled = true;
       document.getElementById('itemImg').disabled = true;
+      document.getElementById('itemRecipe').disabled = false;
 
       // Требуем срок годности только при выставлении
       document.getElementById('itemShelfDays').setAttribute('required', 'required');
@@ -1567,17 +1571,27 @@
 
       const isBarista = currentUser.role === 'barista';
       const isExhibited = item.tags.includes("Выставленное");
+      const isResidual = item.tags.includes("Остаток");
 
-      if (isBarista && !isExhibited) {
+      // Бариста разрешено редактировать описание в "Остаток" и "Выставленное"
+      if (isBarista && !isExhibited && !isResidual) {
         document.getElementById('itemName').disabled = true;
         document.getElementById('itemPrice').disabled = true;
         document.getElementById('itemCalories').disabled = true;
         document.getElementById('itemImg').disabled = true;
+        document.getElementById('itemRecipe').disabled = true;
+      } else if (isBarista && (isExhibited || isResidual)) {
+        document.getElementById('itemName').disabled = true;
+        document.getElementById('itemPrice').disabled = true;
+        document.getElementById('itemCalories').disabled = true;
+        document.getElementById('itemImg').disabled = true;
+        document.getElementById('itemRecipe').disabled = false; // Позволяем менять остаток/описание
       } else {
         document.getElementById('itemName').disabled = false;
         document.getElementById('itemPrice').disabled = false;
         document.getElementById('itemCalories').disabled = false;
         document.getElementById('itemImg').disabled = false;
+        document.getElementById('itemRecipe').disabled = false;
       }
 
       document.getElementById('adminSection').style.display = 'block';
@@ -1595,6 +1609,7 @@
       document.getElementById('itemPrice').disabled = false;
       document.getElementById('itemCalories').disabled = false;
       document.getElementById('itemImg').disabled = false;
+      document.getElementById('itemRecipe').disabled = false;
       document.getElementById('itemShelfDays').removeAttribute('required');
 
       if (currentUser.role === 'barista') {
@@ -1624,15 +1639,16 @@
         checkedTags.push("Выставленное");
       }
 
-      // Проверяем обязательность срока ГОДНОСТИ ТОЛЬКО ДЛЯ ВЫСТАВЛЕННОГО
       if (checkedTags.includes("Выставленное") && !shelf_days) {
         return alert("Для выставленной позиции обязательно укажите срок годности в днях!");
       }
 
       setStatus('⏳ Сохраняем...');
 
+      const targetId = (editId && !isCopy) ? Number(editId) : Date.now();
+
       const payload = {
-        id: (editId && !isCopy) ? Number(editId) : Date.now(),
+        id: targetId,
         title,
         price,
         calories,
@@ -1644,14 +1660,23 @@
         shop_id: currentUser.shop_id
       };
 
+      // Локальное «оптимистичное» обновление без тяжелого перезапроса к базе (убирает лаг)
+      const existingIndex = items.findIndex(i => i.id === targetId);
+      if (existingIndex !== -1) {
+        items[existingIndex] = payload;
+      } else {
+        items.unshift(payload);
+      }
+      renderCards();
+
       const { error } = await db.from('recipes').upsert(payload);
       if (error) {
         setStatus('⚠️ Ошибка сохранения', true);
         alert('Ошибка сохранения: ' + error.message);
+        await fetchItems(); // Загружаем актуальные данные в случае ошибки
       } else {
         setStatus('☁️ Подключено к облачной базе');
         if (editId && isShiftMode) checkedShiftIds.add(Number(editId));
-        await fetchItems();
         resetForm();
       }
     });
@@ -1659,14 +1684,19 @@
     window.deleteItem = async function(id) {
       if (confirm("Удалить эту позицию?")) {
         setStatus('⏳ Удаляем позицию...');
+        
+        // Быстрое локальное удаление для плавности интерфейса
+        items = items.filter(i => i.id !== id);
+        checkedShiftIds.delete(id);
+        renderCards();
+
         const { error } = await db.from('recipes').delete().eq('id', id);
         if (error) {
           setStatus('⚠️ Ошибка удаления', true);
           alert('Ошибка при удалении: ' + error.message);
+          await fetchItems();
         } else {
           setStatus('☁️ Подключено к облачной базе');
-          checkedShiftIds.delete(id);
-          await fetchItems();
         }
       }
     };
@@ -1677,7 +1707,12 @@
       });
     }
 
-    document.getElementById('searchInput').addEventListener('input', renderCards);
+    // Debounce на ввод в строку поиска для исключения задержек при наборе
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(renderCards, 150);
+    });
+
     initTheme();
     initDensityAndFont();
     loadShops();
