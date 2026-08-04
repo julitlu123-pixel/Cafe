@@ -168,35 +168,17 @@
     .search-input { width: 100%; padding: 12px 15px; font-size: 16px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 8px; margin-bottom: 6px; outline: none; }
     .search-hint { font-size: 11px; color: var(--secondary-text); margin-bottom: 12px; }
     
-    /* ТЕГИ: ПО УМОЛЧАНИЮ В НЕСКОЛЬКО СТРОК */
+    /* ТЕГИ ДЛЯ ПК (ОБЫЧНЫЙ БЛОК В НЕСКОЛЬКО СТРОК) */
     .tags-filter { 
       display: flex; 
       flex-wrap: wrap; 
       gap: 8px; 
       margin-bottom: 10px; 
     }
-    
-    /* ТЕГИ ПРИ ПОИСКЕ: ПРОКРУТКА ТОЛЬКО НА МОБИЛЬНЫХ (ЭКРАН <= 600px) */
-    @media (max-width: 600px) {
-      body.search-focused .tags-filter {
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        padding-bottom: 8px;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-      }
-      body.search-focused .tags-filter::-webkit-scrollbar { height: 4px; }
-      body.search-focused .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-      body.search-focused .tag-btn {
-        flex-shrink: 0 !important;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-    }
 
     .tag-btn { 
       border: none; 
-      padding: 6px 12px; 
+      padding: 8px 14px; /* Чуть увеличен размер для удобства клика */
       border-radius: 20px; 
       background: var(--secondary-bg); 
       color: var(--secondary-text); 
@@ -207,6 +189,24 @@
       touch-action: manipulation;
     }
     .tag-btn.active { background: var(--accent-color); color: white; }
+
+    /* СТРОГО ДЛЯ ТЕЛЕФОНОВ (экран <= 600px): ВСЕГДА ПРОКРУТКА */
+    @media (max-width: 600px) {
+      .tags-filter {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+      }
+      .tags-filter::-webkit-scrollbar { height: 4px; }
+      .tags-filter::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+      .tag-btn {
+        flex-shrink: 0 !important;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+    }
 
     .shift-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); }
     .shift-actions { display: flex; flex-direction: column; gap: 8px; }
@@ -559,7 +559,7 @@
     let salesHistory = null;
     let shops = [{ id: 1, name: 'Cafellini' }];
     let currentUser = null;
-    let selectedTags = new Set(); // Поддержка мультивыбора тегов
+    let selectedTags = new Set();
     let isShiftMode = false;
     let checkedShiftIds = new Set();
     let searchDebounceTimer = null;
@@ -1271,7 +1271,6 @@
       });
     }
 
-    // МУЛЬТИВЫБОР ТЕГОВ
     function toggleTagFilter(tag, btnElement) {
       if (selectedTags.has(tag)) {
         selectedTags.delete(tag);
@@ -1404,7 +1403,6 @@
 
         const matchesSearch = includeWords.every(incWord => combinedText.includes(incWord));
         
-        // Мультивыбор тегов: карточка должна содержать ВСЕ выбранные теги
         let matchesTags = true;
         if (selectedTags.size > 0) {
           matchesTags = Array.from(selectedTags).every(selectedTag => item.tags.includes(selectedTag));
