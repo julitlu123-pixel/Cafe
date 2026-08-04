@@ -82,14 +82,29 @@
     
     h1, h2, h3 { text-align: center; margin-bottom: 12px; color: var(--heading-color); }
 
-    /* АВТОМАТИЧЕСКОЕ СКРЫТИЕ ШАПКИ ПРИ АКТИВНОМ ПОИСКЕ */
-    body.search-focused .top-settings-bar,
-    body.search-focused .user-bar,
-    body.search-focused .app-tabs,
-    body.search-focused .status-badge,
-    body.search-focused .timer-widget,
-    body.search-focused .admin-tools {
-      display: none !important;
+    /* ШТОРКА ДЛЯ ВЕРХНЕЙ ПАНЕЛИ */
+    .top-curtain-btn {
+      width: 100%;
+      background: var(--secondary-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .top-collapsible-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 10px;
+      transition: max-height 0.3s ease;
     }
     
     /* ПАНЕЛЬ НАСТРОЕК ВНЕДРЕНИЯ (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) */
@@ -97,7 +112,6 @@
       display: flex;
       justify-content: flex-end;
       gap: 6px;
-      margin-bottom: 10px;
       flex-wrap: wrap;
     }
     .setting-select, .theme-toggle-btn {
@@ -118,7 +132,6 @@
       border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 12px 15px;
-      margin-bottom: 15px;
       box-shadow: 0 2px 8px var(--shadow);
     }
     .timer-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
@@ -152,11 +165,12 @@
     .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); border-radius: 6px; font-size: 14px; margin-bottom: 12px; }
 
     /* ШАПКА ПОЛЬЗОВАТЕЛЯ */
-    .user-bar { background: var(--secondary-bg); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; border: 1px solid var(--border-color); }
+    .user-bar { background: var(--secondary-bg); padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; border: 1px solid var(--border-color); }
     .btn-logout { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .btn-user-edit { background: var(--accent-color); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 6px; }
 
     /* ПАНЕЛЬ АДМИНИСТРАТОРА */
-    .admin-tools { background: var(--card-bg); border: 1px solid #27ae60; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+    .admin-tools { background: var(--card-bg); border: 1px solid #27ae60; padding: 15px; border-radius: 12px; margin-bottom: 10px; }
     .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 600px) { .admin-grid { grid-template-columns: 1fr; } }
 
@@ -178,7 +192,7 @@
 
     .tag-btn { 
       border: none; 
-      padding: 8px 14px; /* Чуть увеличен размер для удобства клика */
+      padding: 8px 14px; 
       border-radius: 20px; 
       background: var(--secondary-bg); 
       color: var(--secondary-text); 
@@ -308,24 +322,6 @@
 </head>
 <body>
 
-  <!-- ВЕРХНЯЯ ПАНЕЛЬ НАСТРОЕК (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) -->
-  <div class="top-settings-bar">
-    <select id="densitySelect" class="setting-select" onchange="changeDensity(this.value)">
-      <option value="normal">📐 Стандартный размер</option>
-      <option value="compact">📱 Компактный (для тел.)</option>
-      <option value="dense">🔍 Плотный список</option>
-    </select>
-
-    <select id="fontSelect" class="setting-select" onchange="changeFont(this.value)">
-      <option value="system">🔤 Шрифты: Системный</option>
-      <option value="rounded">🔤 Шрифты: Rounded</option>
-      <option value="mono">🔤 Шрифты: Monospace</option>
-      <option value="serif">🔤 Шрифты: Serif</option>
-    </select>
-
-    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" style="position: static;">🌙 Тёмная</button>
-  </div>
-
   <!-- Окно Логина -->
   <div class="login-container" id="loginBlock">
     <h2>☕ Вход в систему</h2>
@@ -350,40 +346,65 @@
 
   <!-- Главный экран -->
   <div id="mainAppBlock" style="display: none;">
-    <div class="user-bar">
-      <div>
-        <strong>Кофейня:</strong> <span id="userShopName">Cafellini</span> | 
-        <strong>Пользователь:</strong> <span id="userName"></span> (<span id="userRole"></span>)
+
+    <!-- КНОПКА-ШТОРКА ВЕРХНЕЙ ПАНЕЛИ -->
+    <button class="top-curtain-btn" onclick="toggleTopCurtain()">
+      <span>👤 <span id="topCurtainUserTitle">Пользователь</span></span>
+      <span id="topCurtainIcon">▲ Скрыть шапку</span>
+    </button>
+
+    <!-- СВОРАЧИВАЕМАЯ ВЕРХНЯЯ СЕКЦИЯ -->
+    <div id="topCollapsibleSection" class="top-collapsible-wrapper">
+      
+      <!-- ВЕРХНЯЯ ПАНЕЛЬ НАСТРОЕК (ШРИФТ, КОМПАКТНОСТЬ, ТЕМА) -->
+      <div class="top-settings-bar">
+        <select id="densitySelect" class="setting-select" onchange="changeDensity(this.value)">
+          <option value="normal">📐 Стандартный размер</option>
+          <option value="compact">📱 Компактный (для тел.)</option>
+          <option value="dense">🔍 Плотный список</option>
+        </select>
+
+        <select id="fontSelect" class="setting-select" onchange="changeFont(this.value)">
+          <option value="system">🔤 Шрифты: Системный</option>
+          <option value="rounded">🔤 Шрифты: Rounded</option>
+          <option value="mono">🔤 Шрифты: Monospace</option>
+          <option value="serif">🔤 Шрифты: Serif</option>
+        </select>
+
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" style="position: static;">🌙 Тёмная</button>
       </div>
-      <button class="btn-logout" onclick="logout()">Выйти</button>
-    </div>
 
-    <!-- Вкладки навигации -->
-    <div class="app-tabs">
-      <button class="tab-btn active" id="tabSearchBtn" onclick="switchTab('search')">🔍 Поиск и Меню</button>
-      <button class="tab-btn" id="tabReceiptsBtn" onclick="switchTab('receipts')">🧾 Чеки и Касса (<span id="cartCountBadge">0</span>)</button>
-    </div>
-
-    <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
-
-    <!-- ТАЙМЕР ПРОЛИВА (ЭСПРЕССО) -->
-    <div class="timer-widget">
-      <div class="timer-header" onclick="toggleTimerBody()">
-        <strong>⏱️ Таймер пролива группы</strong>
-        <span id="timerFoldIcon">▼</span>
-      </div>
-      <div id="timerBody" style="display: none; margin-top: 10px;">
-        <div class="timer-display" id="timerText">00:00.0</div>
-        <div class="timer-controls">
-          <button class="btn-timer btn-timer-start" id="btnTimerStart" onclick="startTimer()">▶ Старт</button>
-          <button class="btn-timer btn-timer-pause" id="btnTimerPause" onclick="pauseTimer()">⏸ Пауза</button>
-          <button class="btn-timer btn-timer-reset" onclick="resetTimer()">🔄 Сброс</button>
+      <!-- ШАПКА ПОЛЬЗОВАТЕЛЯ -->
+      <div class="user-bar">
+        <div>
+          <strong>Кофейня:</strong> <span id="userShopName">Cafellini</span> | 
+          <strong>Пользователь:</strong> <span id="userName"></span> (<span id="userRole"></span>)
+        </div>
+        <div>
+          <button class="btn-user-edit" id="btnAdminToolsToggle" onclick="toggleAdminPanel()" style="display: none;">✏️ Редактировать</button>
+          <button class="btn-logout" onclick="logout()">Выйти</button>
         </div>
       </div>
-    </div>
 
-    <!-- Раздел: Поиск и Меню -->
-    <div id="tabSearchSection">
+      <div class="status-badge" id="statusBadge">☁️ Подключено к облачной базе</div>
+
+      <!-- ТАЙМЕР ПРОЛИВА (ЭСПРЕССО) -->
+      <div class="timer-widget">
+        <div class="timer-header" onclick="toggleTimerBody()">
+          <strong>⏱️ Таймер пролива группы</strong>
+          <span id="timerFoldIcon">▼</span>
+        </div>
+        <div id="timerBody" style="display: none; margin-top: 10px;">
+          <div class="timer-display" id="timerText">00:00.0</div>
+          <div class="timer-controls">
+            <button class="btn-timer btn-timer-start" id="btnTimerStart" onclick="startTimer()">▶ Старт</button>
+            <button class="btn-timer btn-timer-pause" id="btnTimerPause" onclick="pauseTimer()">⏸ Пауза</button>
+            <button class="btn-timer btn-timer-reset" onclick="resetTimer()">🔄 Сброс</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ПАНЕЛЬ АДМИНИСТРАТОРА -->
       <div class="admin-tools" id="adminToolsPanel" style="display: none;">
         <h3>⚙️ Управление системой (Администратор)</h3>
         <div class="admin-grid">
@@ -411,6 +432,17 @@
           </div>
         </div>
       </div>
+
+    </div>
+
+    <!-- Вкладки навигации -->
+    <div class="app-tabs">
+      <button class="tab-btn active" id="tabSearchBtn" onclick="switchTab('search')">🔍 Поиск и Меню</button>
+      <button class="tab-btn" id="tabReceiptsBtn" onclick="switchTab('receipts')">🧾 Чеки и Касса (<span id="cartCountBadge">0</span>)</button>
+    </div>
+
+    <!-- Раздел: Поиск и Меню -->
+    <div id="tabSearchSection">
 
       <div class="search-box">
         <input type="text" id="searchInput" class="search-input" placeholder="Поиск (например: сироп -орехи)...">
@@ -563,18 +595,32 @@
     let isShiftMode = false;
     let checkedShiftIds = new Set();
     let searchDebounceTimer = null;
+    let isTopCurtainOpen = true;
 
-    function initSearchFocusHandlers() {
-      const searchInput = document.getElementById('searchInput');
-      if (!searchInput) return;
+    // УПРАВЛЕНИЕ ШТОРКОЙ ВЕРХНЕЙ ПАНЕЛИ
+    function toggleTopCurtain() {
+      const section = document.getElementById('topCollapsibleSection');
+      const icon = document.getElementById('topCurtainIcon');
+      
+      if (isTopCurtainOpen) {
+        section.style.display = 'none';
+        icon.textContent = '▼ Показать шапку';
+        isTopCurtainOpen = false;
+      } else {
+        section.style.display = 'flex';
+        icon.textContent = '▲ Скрыть шапку';
+        isTopCurtainOpen = true;
+      }
+    }
 
-      searchInput.addEventListener('focus', () => {
-        document.body.classList.add('search-focused');
-      });
-
-      searchInput.addEventListener('blur', () => {
-        document.body.classList.remove('search-focused');
-      });
+    function toggleAdminPanel() {
+      const adminPanel = document.getElementById('adminToolsPanel');
+      if (adminPanel.style.display === 'none') {
+        adminPanel.style.display = 'block';
+        fetchBaristaAccounts();
+      } else {
+        adminPanel.style.display = 'none';
+      }
     }
 
     function changeDensity(val) {
@@ -1055,19 +1101,20 @@
       document.getElementById('userShopName').textContent = shopTitle;
       document.getElementById('userName').textContent = currentUser.login;
       document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Администратор' : 'Бариста';
+      
+      document.getElementById('topCurtainUserTitle').textContent = `${currentUser.login} (${currentUser.role === 'admin' ? 'Админ' : 'Бариста'})`;
 
       if (currentUser.role === 'admin') {
-        document.getElementById('adminToolsPanel').style.display = 'block';
+        document.getElementById('btnAdminToolsToggle').style.display = 'inline-block';
         document.getElementById('adminSection').style.display = 'block';
-        fetchBaristaAccounts();
       } else {
+        document.getElementById('btnAdminToolsToggle').style.display = 'none';
         document.getElementById('adminToolsPanel').style.display = 'none';
         document.getElementById('adminSection').style.display = 'none';
       }
 
       initTags();
       initSwipeDiscount();
-      initSearchFocusHandlers();
       fetchItems();
     }
 
