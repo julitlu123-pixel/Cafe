@@ -449,7 +449,7 @@
             </div>
             <div class="form-group">
               <label for="itemShelfDays">Срок годности (в днях):</label>
-              <input type="number" id="itemShelfDays" placeholder="Например: 3" class="form-control">
+              <input type="number" id="itemShelfDays" placeholder="Необязательно" class="form-control">
             </div>
           </div>
           
@@ -548,7 +548,6 @@
     let isShiftMode = false;
     let checkedShiftIds = new Set();
 
-    // ОБРАБОТКА СКРЫТИЯ ВЕРХНИХ БЛОКОВ ПРИ ВВОДЕ В ПОИСК
     function initSearchFocusHandlers() {
       const searchInput = document.getElementById('searchInput');
       if (!searchInput) return;
@@ -562,7 +561,6 @@
       });
     }
 
-    // НАСТРОЙКА КОМПАКТНОСТИ И ШРИФТОВ
     function changeDensity(val) {
       document.documentElement.setAttribute('data-density', val);
       localStorage.setItem('coffee_app_density', val);
@@ -589,7 +587,6 @@
       changeFont(savedFont);
     }
 
-    // ТАЙМЕР ПРОЛИВА
     let timerInterval = null;
     let timerStartTime = 0;
     let timerElapsedTime = 0;
@@ -849,7 +846,7 @@
         amount: finalTotal,
         payment_method: method,
         items_summary: itemsSummary,
-        created_by: currentUser.login, // Записываем имя бариста
+        created_by: currentUser.login,
         created_at: new Date().toISOString()
       };
 
@@ -1349,8 +1346,9 @@
       }
     }
 
+    // БЕЗОПАСНЫЙ ПОДСЧЁТ СРОКА ГОДНОСТИ
     function getExpiryHtml(madeDateStr, shelfDaysNum) {
-      if (!madeDateStr || !shelfDaysNum) return '';
+      if (!madeDateStr || !shelfDaysNum || isNaN(Number(shelfDaysNum))) return '';
 
       const madeDate = new Date(madeDateStr);
       if (isNaN(madeDate.getTime())) return '';
@@ -1532,6 +1530,9 @@
       document.getElementById('itemCalories').disabled = true;
       document.getElementById('itemImg').disabled = true;
 
+      // Требуем срок годности только при выставлении
+      document.getElementById('itemShelfDays').setAttribute('required', 'required');
+
       document.getElementById('adminSection').style.display = 'block';
       document.getElementById('formTitle').textContent = 'Выставить позицию на витрину';
       document.getElementById('btnSubmit').textContent = 'Сохранить выставленное';
@@ -1588,6 +1589,7 @@
       document.getElementById('itemPrice').disabled = false;
       document.getElementById('itemCalories').disabled = false;
       document.getElementById('itemImg').disabled = false;
+      document.getElementById('itemShelfDays').removeAttribute('required');
 
       if (currentUser.role === 'barista') {
         document.getElementById('adminSection').style.display = 'none';
@@ -1616,6 +1618,11 @@
         checkedTags.push("Выставленное");
       }
 
+      // Проверяем обязательность срока ГОДНОСТИ ТОЛЬКО ДЛЯ ВЫСТАВЛЕННОГО
+      if (checkedTags.includes("Выставленное") && !shelf_days) {
+        return alert("Для выставленной позиции обязательно укажите срок годности в днях!");
+      }
+
       setStatus('⏳ Сохраняем...');
 
       const payload = {
@@ -1623,8 +1630,8 @@
         title,
         price,
         calories,
-        made_date,
-        shelf_days,
+        made_date: made_date || null,
+        shelf_days: shelf_days ? Number(shelf_days) : null,
         tags: checkedTags,
         img,
         recipe,
